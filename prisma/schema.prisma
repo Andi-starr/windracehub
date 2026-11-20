@@ -1,0 +1,162 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider  = "postgresql"
+  url       = env("DATABASE_URL")
+  directUrl = env("DIRECT_URL")
+}
+
+model User {
+  id           String      @id @default(cuid())
+  email        String      @unique
+  name         String
+  passwordHash String?
+  isAdmin      Boolean     @default(false)
+  createdAt    DateTime    @default(now())
+  sessions     Session[]
+  roles        EventRole[]
+}
+
+model Session {
+  id        String   @id
+  userId    String
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  expiresAt DateTime
+}
+
+model Club {
+  id        String  @id @default(cuid())
+  name      String  @unique
+  shortName String?
+  website   String?
+  events    Event[]
+}
+
+enum EventStatus {
+  DRAFT
+  PUBLISHED
+  CANCELLED
+}
+
+model Event {
+  id           String         @id @default(cuid())
+  slug         String         @unique
+  title        String
+  clubId       String?
+  club         Club?          @relation(fields: [clubId], references: [id])
+  venue        String?
+  startDate    DateTime       @db.Date
+  endDate      DateTime       @db.Date
+  description  String?
+  entryInfo    String?
+  entryUrl     String?
+  contactEmail String?
+  status       EventStatus    @default(DRAFT)
+  sourceUrl    String?
+  createdAt    DateTime       @default(now())
+  updatedAt    DateTime       @updatedAt
+  classes      EventClass[]
+  schedule     ScheduleItem[]
+  documents    Document[]
+  results      Result[]
+  entries      Entry[]
+  roles        EventRole[]
+  invites      Invite[]
+
+  @@index([startDate])
+}
+
+model EventClass {
+  id       String   @id @default(cuid())
+  eventId  String
+  event    Event    @relation(fields: [eventId], references: [id], onDelete: Cascade)
+  name     String
+  position Int      @default(0)
+  results  Result[]
+  entries  Entry[]
+}
+
+model ScheduleItem {
+  id      String   @id @default(cuid())
+  eventId String
+  event   Event    @relation(fields: [eventId], references: [id], onDelete: Cascade)
+  at      DateTime
+  title   String
+}
+
+enum DocType {
+  NOR
+  SI
+  AMENDMENT
+  NOTICE
+  PROTEST
+  OTHER
+}
+
+model Document {
+  id           String   @id @default(cuid())
+  eventId      String
+  event        Event    @relation(fields: [eventId], references: [id], onDelete: Cascade)
+  type         DocType
+  title        String
+  fileKey      String
+  fileName     String
+  size         Int
+  publishedAt  DateTime @default(now())
+  uploadedBy   String?
+}
+
+model Result {
+  id           String      @id @default(cuid())
+  eventId      String
+  event        Event       @relation(fields: [eventId], references: [id], onDelete: Cascade)
+  classId      String?
+  eventClass   EventClass? @relation(fields: [classId], references: [id], onDelete: SetNull)
+  title        String
+  provisional  Boolean     @default(true)
+  headers      String[]
+  rows         Json?
+  fileKey      String?
+  fileName     String?
+  publishedAt  DateTime    @default(now())
+  uploadedBy   String?
+}
+
+model Entry {
+  id         String      @id @default(cuid())
+  eventId    String
+  event      Event       @relation(fields: [eventId], references: [id], onDelete: Cascade)
+  classId    String?
+  eventClass EventClass? @relation(fields: [classId], references: [id], onDelete: SetNull)
+  sailNumber String?
+  boatName   String?
+  skipper    String?
+  club       String?
+}
+
+enum Role {
+  HOST
+  OFFICIAL
+}
+
+model EventRole {
+  userId  String
+  user    User   @relation(fields: [userId], references: [id], onDelete: Cascade)
+  eventId String
+  event   Event  @relation(fields: [eventId], references: [id], onDelete: Cascade)
+  role    Role
+
+  @@id([userId, eventId])
+}
+
+model Invite {
+  token      String    @id
+  eventId    String
+  event      Event     @relation(fields: [eventId], references: [id], onDelete: Cascade)
+  email      String
+  role       Role
+  createdAt  DateTime  @default(now())
+  acceptedAt DateTime?
+}

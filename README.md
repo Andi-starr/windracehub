@@ -1,36 +1,45 @@
-This is a [Next.js](https://nextjs.org) project bootstrapped with [`create-next-app`](https://nextjs.org/docs/app/api-reference/cli/create-next-app).
+# windracehub
 
-## Getting Started
+Regatten in der Region Zürich: Ausschreibungen, Segelanweisungen, Mitteilungen, Resultate und Meldelisten an einem Ort.
+Eine einfache Alternative zu manage2sail, gebaut für Organisatoren und Wettfahrtleitungen.
 
-First, run the development server:
+## Was es kann
+
+- **Öffentlich:** Regattaliste (Suche, Club, Klasse, kommend/vergangen), Eventseite mit Dokumenten, Mitteilungen ("Neu"-Badge 48 h), Resultaten pro Klasse (provisorisch/final, frühere Stände), Meldeliste, Programm, Kalender-Export (.ics).
+- **Organisator (Host):** Regatta mit einem Formular erstellen (nur Name + Datum Pflicht), alles auf einer Seite bearbeiten, für nächstes Jahr kopieren, veröffentlichen/verbergen/absagen, Team einladen (Link per E-Mail/WhatsApp).
+- **Wettfahrtleitung (Official):** PDFs reinziehen → Art wird aus dem Dateinamen erraten → veröffentlichen. Resultate als Sailwave-HTML, CSV oder direkt aus Excel einfügen (Vorschau vor dem Veröffentlichen) oder als PDF.
+- Der erste registrierte Benutzer wird Admin und sieht alle Regatten.
+
+## Stack
+
+Next.js 15 (App Router, Server Actions) · Prisma · Postgres (Supabase) · Supabase Storage für Dateien · Tailwind. Hosting: Vercel.
+
+## Lokal starten
 
 ```bash
+npm install
+# Postgres lokal oder Supabase-URL in .env (siehe .env.example)
+npx prisma migrate deploy
+npm run seed        # 60 Zürcher Regatten 2026 aus manage2sail (Titel, Datum, Ort, Club, Link)
 npm run dev
-# or
-yarn dev
-# or
-pnpm dev
-# or
-bun dev
 ```
 
-Open [http://localhost:3000](http://localhost:3000) with your browser to see the result.
+Ohne `SUPABASE_URL` landen Uploads im Ordner `uploads/` (nur für lokal).
 
-You can start editing the page by modifying `app/page.tsx`. The page auto-updates as you edit the file.
+## Live schalten (Vercel + Supabase)
 
-This project uses [`next/font`](https://nextjs.org/docs/app/building-your-application/optimizing/fonts) to automatically optimize and load [Geist](https://vercel.com/font), a new font family for Vercel.
+1. **Supabase:** neues Projekt (Region Zürich/Frankfurt). Unter *Storage* einen **öffentlichen** Bucket `files` anlegen.
+   Unter *Project settings → Database* die Connection-Strings kopieren (pooled 6543 → `DATABASE_URL` mit `?pgbouncer=true`, direct 5432 → `DIRECT_URL`).
+   Unter *Project settings → API* `SUPABASE_URL` und `service_role`-Key kopieren.
+2. **GitHub:** diesen Ordner in ein Repo pushen.
+3. **Vercel:** Repo importieren, die Variablen aus `.env.example` setzen (`SESSION_SECRET` = `openssl rand -hex 32`, `APP_URL=https://windracehub.com`). Deploy führt die Migrationen automatisch aus.
+4. Einmal `npm run seed` gegen die Supabase-DB laufen lassen (lokal mit der Supabase-`DATABASE_URL` in `.env`).
+5. Auf der Seite registrieren: der erste Account wird Admin.
+6. Domain `windracehub.com` in Vercel unter *Domains* hinzufügen.
 
-## Learn More
+## Noch offen
 
-To learn more about Next.js, take a look at the following resources:
-
-- [Next.js Documentation](https://nextjs.org/docs) - learn about Next.js features and API.
-- [Learn Next.js](https://nextjs.org/learn) - an interactive Next.js tutorial.
-
-You can check out [the Next.js GitHub repository](https://github.com/vercel/next.js) - your feedback and contributions are welcome!
-
-## Deploy on Vercel
-
-The easiest way to deploy your Next.js app is to use the [Vercel Platform](https://vercel.com/new?utm_medium=default-template&filter=next.js&utm_source=create-next-app&utm_campaign=create-next-app-readme) from the creators of Next.js.
-
-Check out our [Next.js deployment documentation](https://nextjs.org/docs/app/building-your-application/deploying) for more details.
+- E-Mails (Einladungen, Passwort vergessen, "neue Mitteilung"-Benachrichtigung) – braucht einen Mail-Dienst (z.B. Resend).
+- Excel (.xlsx) direkt hochladen (heute: kopieren & einfügen oder CSV).
+- Details der importierten Regatten (Klassen, Dokumente, Resultate) sind nicht übernommen, nur die Liste.
+- Ranglisten über mehrere Regatten (Cups/Serien wie ZLC), wie auf sunsetrace.
