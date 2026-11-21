@@ -3,7 +3,8 @@ import { createHmac } from "crypto";
 import { mkdir, writeFile, readFile } from "fs/promises";
 import path from "path";
 
-const SB_URL = process.env.SUPABASE_URL;
+// tolerate a pasted ".../rest/v1/" or trailing slash
+const SB_URL = process.env.SUPABASE_URL?.trim().replace(/\/rest\/v1\/?$/, "").replace(/\/+$/, "");
 const SB_KEY = process.env.SUPABASE_SERVICE_ROLE_KEY;
 const BUCKET = process.env.SUPABASE_BUCKET || "files";
 const useSupabase = !!(SB_URL && SB_KEY);
