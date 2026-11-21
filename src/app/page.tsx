@@ -1,23 +1,10 @@
 import Link from "next/link";
-import { Suspense } from "react";
-import localFont from "next/font/local";
 import { db } from "@/lib/db";
-import { currentUser } from "@/lib/auth";
 import { fmtDate } from "@/lib/format";
 import { getT } from "@/i18n";
-import { HomeLang } from "./HomeLang";
 
 export const dynamic = "force-dynamic";
 
-// self-hosted (no Google fetch at build time)
-const grotesk = localFont({
-  src: [
-    { path: "../../node_modules/@fontsource/space-grotesk/files/space-grotesk-latin-400-normal.woff2", weight: "400" },
-    { path: "../../node_modules/@fontsource/space-grotesk/files/space-grotesk-latin-500-normal.woff2", weight: "500" },
-    { path: "../../node_modules/@fontsource/space-grotesk/files/space-grotesk-latin-700-normal.woff2", weight: "700" },
-  ],
-  display: "swap",
-});
 const DAY = 864e5;
 const OR = "bg-[#ff5f1f]";
 
@@ -32,7 +19,7 @@ function Photo({ name, alt, big = false }: { name: string; alt: string; big?: bo
 }
 
 export default async function Start() {
-  const [{ t, intl, locale }, user] = await Promise.all([getT(), currentUser()]);
+  const { t, intl } = await getT();
   const s = t.start;
   const today = new Date(new Date().toISOString().slice(0, 10) + "T00:00:00Z");
   const year = today.getUTCFullYear();
@@ -48,41 +35,21 @@ export default async function Start() {
     const d = Math.round((a.getTime() - today.getTime()) / DAY);
     return d <= 0 ? s.running : d === 1 ? s.tomorrow : s.inDays.replace("{n}", String(d));
   };
-  const navCell = "flex items-center border-l-2 border-[#151515] px-3 sm:px-5 text-[11px] sm:text-xs font-medium uppercase tracking-wide hover:bg-black/5";
 
   return (
-    <div className={`${grotesk.className} relative -mt-6 mb-[-1.5rem] ml-[calc(50%-50vw)] w-screen bg-[#e3e5e8] text-[#151515]`}>
-      {/* thin vertical grid lines over the whole page */}
-      <div aria-hidden className="pointer-events-none absolute inset-0 grid grid-cols-6 px-4 sm:px-8 lg:grid-cols-12">
-        {Array.from({ length: 12 }, (_, i) => <div key={i} className={`border-l border-[#151515]/10 ${i >= 6 ? "hidden lg:block" : ""}`} />)}
-      </div>
-
-      <div className="relative">
-        {/* nav: boxed items, one solid orange cell */}
-        <header className="flex min-h-12 flex-wrap items-stretch border-y-2 border-[#151515]">
-          <Link href="/" className="flex items-center px-4 py-3 text-base font-bold tracking-tight sm:px-8">WINDRACEHUB</Link>
-          <nav className="ml-auto flex flex-wrap items-stretch">
-            <Link href="/regatten" className={navCell}>{t.nav.regattas}</Link>
-            <Link href="/clubs" className={navCell}>{t.nav.clubs}</Link>
-            <Link href={user ? "/me" : "/login"} className={navCell}>{user ? s.mine : s.login}</Link>
-            <div className={navCell}><Suspense><HomeLang current={locale} /></Suspense></div>
-            <Link href="/regatten" className={`flex items-center gap-2 px-4 py-3 text-[11px] font-medium uppercase tracking-wide text-[#151515] sm:px-6 sm:text-xs ${OR} hover:brightness-105`}>{s.search} <span aria-hidden>→</span></Link>
-          </nav>
-        </header>
-
-        <div className="px-4 sm:px-8">
+    <div className="relative">
+        <div>
           {/* meta row */}
-          <div className="grid grid-cols-2 py-6 text-[11px] font-medium uppercase tracking-wide sm:grid-cols-3">
+          <div className="grid grid-cols-2 py-6 text-[11px] font-medium uppercase tracking-wide">
             <span>{s.meta1}</span>
-            <span className="hidden text-center sm:block">{s.meta2}</span>
-            <span className="text-right">{s.est}</span>
+            <span className="text-right">{s.meta2}</span>
           </div>
 
           {/* badge · flow · intro */}
           <div className="grid items-start gap-8 pb-12 md:grid-cols-3">
             <div className="flex h-28 w-28 flex-col items-center justify-center rounded-full bg-[#151515] text-center text-white sm:h-32 sm:w-32">
               <span className="text-4xl font-medium leading-none tracking-tight">{season}</span>
-              <span className="mt-1 text-[11px] leading-tight">{s.regattas}<br />{s.season} {year}</span>
+              <span className="mt-1 px-3 text-[11px] leading-tight">{s.badge.replace("{y}", String(year))}</span>
             </div>
             <div className="text-[11px] font-medium uppercase tracking-wide">
               <div>{s.flow}</div>
@@ -90,7 +57,10 @@ export default async function Start() {
             </div>
             <div>
               <p className="text-[15px] leading-relaxed">{s.intro}</p>
-              <Link href="/regatten" className={`mt-6 inline-flex items-center gap-2 px-5 py-3 text-xs font-medium uppercase tracking-wide ${OR} hover:brightness-105`}>{s.all} <span aria-hidden>→</span></Link>
+              <div className="mt-6 flex flex-wrap items-center gap-x-6 gap-y-3">
+                <Link href="/regatten" className={`inline-flex items-center gap-2 px-5 py-3 text-xs font-medium uppercase tracking-wide ${OR} hover:brightness-105`}>{s.all} <span aria-hidden>→</span></Link>
+                <Link href="/veranstalten" className="text-[11px] font-medium uppercase tracking-wide text-[#151515]/60 hover:text-[#151515] hover:underline">{t.nav.host} →</Link>
+              </div>
             </div>
           </div>
 
@@ -126,8 +96,7 @@ export default async function Start() {
                 ))}
               </ul>
               <div className="mt-4 flex items-center justify-between border-t-2 border-[#151515] pt-3 text-[11px] font-medium uppercase tracking-wide">
-                <span>{s.clubs}: {clubs}</span>
-                <Link href="/regatten" className="hover:underline">{s.all} →</Link>
+                <span>{s.clubs}</span><span className="tabular-nums">{clubs}</span>
               </div>
             </section>
           </div>
@@ -140,11 +109,6 @@ export default async function Start() {
             <div className="aspect-[4/3] overflow-hidden"><Photo name="rainbow" alt="Zürichsee" /></div>
           </div>
         </div>
-
-        <footer className="flex flex-wrap justify-between gap-2 border-t-2 border-[#151515] px-4 py-4 text-[11px] font-medium uppercase tracking-wide sm:px-8">
-          <span>windracehub</span><span>{t.footer}</span>
-        </footer>
-      </div>
     </div>
   );
 }

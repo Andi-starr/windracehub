@@ -46,7 +46,7 @@ export default async function ManagePage() {
     <div className="space-y-6">
       <div className="flex flex-wrap items-center justify-between gap-3">
         <div>
-          <h1 className="text-2xl font-bold text-sea-900">{t.manage.hello} {user.name.split(" ")[0]}</h1>
+          <h1 className="h1">{t.manage.hello} {user.name.split(" ")[0]}</h1>
           <p className="text-sm text-slate-600">{user.role === "ADMIN" ? t.manage.adminSees : t.manage.yours} <span className="badge bg-slate-100 text-slate-600">{t.roles[user.role]}</span></p>
         </div>
         {canHost(user) && <Link href="/manage/new" className="btn">{t.manage.newEvent}</Link>}

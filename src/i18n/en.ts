@@ -1,7 +1,7 @@
 import type { Dict } from "./de";
 const en: Dict = {
   meta: { description: "Sailing regattas in Switzerland: notices of race, sailing instructions, notices, entries, start sequence and results in one place." },
-  nav: { clubs: "Clubs", regattas: "Regattas", myEvents: "My events", myEntries: "My entries", admin: "Admin", login: "Login", logout: "Log out" },
+  nav: { classes: "Classes", host: "Host a regatta", clubs: "Clubs", regattas: "Regattas", myEvents: "My events", myEntries: "My entries", admin: "Admin", login: "Login", logout: "Log out" },
   footer: "windracehub · Regattas in Switzerland",
   roles: { ADMIN: "Admin", HOST: "Host", PARTICIPANT: "Participant", OFFICIAL: "Race committee" },
   status: { DRAFT: "Draft", PUBLISHED: "Public", CANCELLED: "Cancelled", draftHidden: "Draft, not public" },
@@ -11,7 +11,15 @@ const en: Dict = {
     new: "New", file: "File", all: "All", none: "None", yes: "Yes", no: "No", search: "Search", filter: "Filter",
     loading: "…", error: "Error", class: "Class", club: "Club", total: "Overall / other", rows: "rows", name: "Name", email: "Email",
   },
+  classesPage: { title: "Classes", intro: "All boat classes with regattas on windracehub. Tap one to see its regattas.", upcoming: "upcoming", inYear: "in {y}", none: "No classes yet." },
+  hostPage: {
+    title: "Host a regatta",
+    text: "Hosts get their access from the windracehub admin. After that you create and edit your regattas yourself: notice of race, entry list, start clock and results.",
+    ask: "Request access", askHint: "Write to us with your club and the regatta you want to run.", noContact: "Ask the windracehub admin for a host account.",
+    have: "Already have access?", toManage: "Go to my events",
+  },
   start: {
+    badge: "regattas in {y}",
     meta1: "Swiss sailing events", meta2: "Zurich, Switzerland", est: "Est. 2026", flow: "Notice of race → Entry → Results", flowSub: "All in one place", intro: "Every regatta in Switzerland on one page: where and when we race. Notice of race, entry, start clock and results are right on each regatta’s page.", caption: "Lake Zurich / M15", login: "Log in", mine: "My area",
     kicker: "Regattas in Switzerland", title: "Where and when we race.", next: "Next regattas", all: "All regattas", search: "Find a regatta",
     statusTitle: "Overview", nextRace: "Next regatta", thisWeek: "Next 7 days", thisMonth: "Next 30 days", season: "Season", clubs: "Clubs",

@@ -17,7 +17,7 @@ export default async function PublicRace({ params }: { params: Promise<{ slug: s
   return (
     <div className="mx-auto max-w-2xl space-y-4">
       <Link href={`/e/${slug}#wettfahrten`} className="text-sm text-sea-600 underline">← {race.event.title}</Link>
-      <h1 className="text-xl font-bold text-sea-900">{className} · {t.race.title} {race.number}</h1>
+      <h1 className="h1">{className} · {t.race.title} {race.number}</h1>
       <RaceClock initial={initial} className={className} />
     </div>
   );

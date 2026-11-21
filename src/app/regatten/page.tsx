@@ -72,7 +72,7 @@ export default async function Regatten({ searchParams }: { searchParams: SP }) {
   return (
     <div className="space-y-6">
       <section>
-        <h1 className="text-2xl font-bold tracking-tight text-sea-900">{t.home.title}</h1>
+        <h1 className="h1">{t.home.title}</h1>
         <p className="mt-1 text-sm text-slate-600">{t.home.subtitle}</p>
       </section>
 

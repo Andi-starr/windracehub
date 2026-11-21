@@ -50,7 +50,7 @@ export default async function ManageEvent({ params, searchParams }: { params: Pr
       <div className="card flex flex-wrap items-center justify-between gap-3">
         <div>
           <p className="text-sm text-slate-500">{fmtRange(e.startDate, e.endDate, intl)} · {e.club?.name ?? t.manage.noClub}</p>
-          <h1 className="text-xl font-bold text-sea-900">{e.title}</h1>
+          <h1 className="h1">{e.title}</h1>
           <p className="mt-1 text-sm">
             {e.status === "DRAFT" && <span className="badge bg-amber-100 text-amber-800">{t.status.draftHidden}</span>}
             {e.status === "PUBLISHED" && <span className="badge bg-emerald-100 text-emerald-800">{t.status.PUBLISHED}</span>}

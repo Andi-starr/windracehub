@@ -27,7 +27,7 @@ export default async function AdminPage({ searchParams }: { searchParams: Promis
   return (
     <div className="space-y-6">
       <div>
-        <h1 className="text-2xl font-bold text-sea-900">{t.admin.title}</h1>
+        <h1 className="h1">{t.admin.title}</h1>
         <p className="text-sm text-slate-600">{t.admin.intro}</p>
       </div>
       {!mailEnabled() && <p className="rounded-lg bg-amber-50 px-4 py-2 text-sm text-amber-900">{t.accounts.mailOff}</p>}

@@ -20,7 +20,7 @@ export default async function MePage() {
   return (
     <div className="space-y-6">
       <div>
-        <h1 className="text-2xl font-bold text-sea-900">{t.entry.myTitle}</h1>
+        <h1 className="h1">{t.entry.myTitle}</h1>
         <p className="text-sm text-slate-600">{user.name} · {user.email} · <span className="badge bg-slate-100 text-slate-700">{t.roles[user.role]}</span></p>
       </div>
       <section className="card">

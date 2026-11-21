@@ -1,6 +1,6 @@
 const de = {
   meta: { description: "Regatten in der Schweiz: Ausschreibungen, Segelanweisungen, Mitteilungen, Meldungen, Startverfahren und Resultate an einem Ort." },
-  nav: { clubs: "Clubs", regattas: "Regatten", myEvents: "Meine Events", myEntries: "Meine Meldungen", admin: "Admin", login: "Login", logout: "Abmelden" },
+  nav: { classes: "Klassen", host: "Regatta veranstalten", clubs: "Clubs", regattas: "Regatten", myEvents: "Meine Events", myEntries: "Meine Meldungen", admin: "Admin", login: "Login", logout: "Abmelden" },
   footer: "windracehub · Regatten in der Schweiz",
   roles: { ADMIN: "Admin", HOST: "Veranstalter", PARTICIPANT: "Teilnehmer", OFFICIAL: "Wettfahrtleitung" },
   status: { DRAFT: "Entwurf", PUBLISHED: "Öffentlich", CANCELLED: "Abgesagt", draftHidden: "Entwurf, nicht öffentlich" },
@@ -10,7 +10,15 @@ const de = {
     new: "Neu", file: "Datei", all: "Alle", none: "Keine", yes: "Ja", no: "Nein", search: "Suche", filter: "Filtern",
     loading: "…", error: "Fehler", class: "Klasse", club: "Club", total: "Gesamt / andere", rows: "Zeilen", name: "Name", email: "E-Mail",
   },
+  classesPage: { title: "Klassen", intro: "Alle Bootsklassen mit Regatten auf windracehub. Antippen zeigt die Regatten dieser Klasse.", upcoming: "kommend", inYear: "in {y}", none: "Noch keine Klassen." },
+  hostPage: {
+    title: "Regatta veranstalten",
+    text: "Veranstalter erhalten ihren Zugang vom windracehub-Admin. Danach erstellst und bearbeitest du deine Regatten selbst: Ausschreibung, Meldeliste, Startuhr und Resultate.",
+    ask: "Zugang anfragen", askHint: "Schreib uns mit deinem Club und der Regatta, die du durchführen willst.", noContact: "Frag den Admin von windracehub nach einem Veranstalter-Zugang.",
+    have: "Du hast schon einen Zugang?", toManage: "Zu meinen Events",
+  },
   start: {
+    badge: "Regatten in {y}",
     meta1: "Segelregatten Schweiz", meta2: "Zürich, Schweiz", est: "Seit 2026", flow: "Ausschreibung → Meldung → Resultate", flowSub: "Alles an einem Ort", intro: "Alle Regatten der Schweiz auf einer Seite: wann und wo gesegelt wird. Ausschreibung, Meldung, Startuhr und Resultate findest du direkt bei jeder Regatta.", caption: "Zürichsee / M15", login: "Anmelden", mine: "Mein Bereich",
     kicker: "Regatten in der Schweiz", title: "Wo und wann gesegelt wird.", next: "Nächste Regatten", all: "Alle Regatten", search: "Regatta suchen",
     statusTitle: "Übersicht", nextRace: "Nächste Regatta", thisWeek: "Nächste 7 Tage", thisMonth: "Nächste 30 Tage", season: "Saison", clubs: "Clubs",

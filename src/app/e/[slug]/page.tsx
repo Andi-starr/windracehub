@@ -67,7 +67,7 @@ export default async function EventPage({ params }: { params: P }) {
         <div className="flex flex-wrap items-start justify-between gap-3">
           <div>
             <p className="text-sm font-semibold text-sea-600">{fmtRange(e.startDate, e.endDate, intl)}</p>
-            <h1 className="text-2xl font-bold tracking-tight text-sea-900">{e.title}</h1>
+            <h1 className="h1">{e.title}</h1>
             <p className="mt-1 text-slate-600">{[e.club?.name, e.venue].filter(Boolean).join(" · ")}</p>
             {e.classes.length > 0 && (
               <div className="mt-3 flex flex-wrap gap-1">

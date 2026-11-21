@@ -1,7 +1,7 @@
 import type { Dict } from "./de";
 const fr: Dict = {
   meta: { description: "Régates en Suisse : avis de course, instructions de course, communiqués, inscriptions, procédure de départ et résultats au même endroit." },
-  nav: { clubs: "Clubs", regattas: "Régates", myEvents: "Mes événements", myEntries: "Mes inscriptions", admin: "Admin", login: "Connexion", logout: "Déconnexion" },
+  nav: { classes: "Classes", host: "Organiser une régate", clubs: "Clubs", regattas: "Régates", myEvents: "Mes événements", myEntries: "Mes inscriptions", admin: "Admin", login: "Connexion", logout: "Déconnexion" },
   footer: "windracehub · Régates en Suisse",
   roles: { ADMIN: "Admin", HOST: "Organisateur", PARTICIPANT: "Participant", OFFICIAL: "Comité de course" },
   status: { DRAFT: "Brouillon", PUBLISHED: "Public", CANCELLED: "Annulée", draftHidden: "Brouillon, non public" },
@@ -11,7 +11,15 @@ const fr: Dict = {
     new: "Nouveau", file: "Fichier", all: "Tous", none: "Aucun", yes: "Oui", no: "Non", search: "Recherche", filter: "Filtrer",
     loading: "…", error: "Erreur", class: "Série", club: "Club", total: "Général / autre", rows: "lignes", name: "Nom", email: "E-mail",
   },
+  classesPage: { title: "Classes", intro: "Toutes les classes avec des régates sur windracehub. Touchez une classe pour voir ses régates.", upcoming: "à venir", inYear: "en {y}", none: "Pas encore de classes." },
+  hostPage: {
+    title: "Organiser une régate",
+    text: "Les organisateurs reçoivent leur accès de l’admin de windracehub. Ensuite, vous créez et modifiez vos régates vous-même : avis de course, liste des inscrits, chrono de départ et résultats.",
+    ask: "Demander un accès", askHint: "Écrivez-nous avec votre club et la régate que vous voulez organiser.", noContact: "Demandez un accès organisateur à l’admin de windracehub.",
+    have: "Vous avez déjà un accès ?", toManage: "Mes événements",
+  },
   start: {
+    badge: "régates en {y}",
     meta1: "Régates en Suisse", meta2: "Zurich, Suisse", est: "Depuis 2026", flow: "Avis de course → Inscription → Résultats", flowSub: "Tout au même endroit", intro: "Toutes les régates de Suisse sur une page : où et quand on régate. Avis de course, inscription, chrono de départ et résultats sur la page de chaque régate.", caption: "Lac de Zurich / M15", login: "Connexion", mine: "Mon espace",
     kicker: "Régates en Suisse", title: "Où et quand on régate.", next: "Prochaines régates", all: "Toutes les régates", search: "Chercher une régate",
     statusTitle: "Aperçu", nextRace: "Prochaine régate", thisWeek: "7 prochains jours", thisMonth: "30 prochains jours", season: "Saison", clubs: "Clubs",

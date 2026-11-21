@@ -8,18 +8,16 @@ import { db } from "@/lib/db";
 import { getT } from "@/i18n";
 import { I18nProvider } from "@/i18n/client";
 import { LangSwitch } from "@/components/LangSwitch";
-import { HideOnHome } from "@/components/HideOnHome";
+import { PageWidth } from "@/components/PageWidth";
 
-const inter = localFont({
-  variable: "--font-inter",
+// self-hosted, no Google fetch at build time
+const grotesk = localFont({
+  variable: "--font-grotesk",
   display: "swap",
   src: [
-    { path: "../../node_modules/@fontsource/inter/files/inter-latin-400-normal.woff2", weight: "400" },
-    { path: "../../node_modules/@fontsource/inter/files/inter-latin-500-normal.woff2", weight: "500" },
-    { path: "../../node_modules/@fontsource/inter/files/inter-latin-600-normal.woff2", weight: "600" },
-    { path: "../../node_modules/@fontsource/inter/files/inter-latin-700-normal.woff2", weight: "700" },
-    { path: "../../node_modules/@fontsource/inter/files/inter-latin-800-normal.woff2", weight: "800" },
-    { path: "../../node_modules/@fontsource/inter/files/inter-latin-900-normal.woff2", weight: "900" },
+    { path: "../../node_modules/@fontsource/space-grotesk/files/space-grotesk-latin-400-normal.woff2", weight: "400" },
+    { path: "../../node_modules/@fontsource/space-grotesk/files/space-grotesk-latin-500-normal.woff2", weight: "500" },
+    { path: "../../node_modules/@fontsource/space-grotesk/files/space-grotesk-latin-700-normal.woff2", weight: "700" },
   ],
 });
 
@@ -33,36 +31,37 @@ export default async function RootLayout({ children }: { children: React.ReactNo
   const showManage = !!user && (canHost(user) || (await db.eventRole.count({ where: { userId: user.id } })) > 0);
   return (
     <html lang={locale}>
-      <body className={`${inter.variable} min-h-screen`}>
+      <body className={`${grotesk.variable} min-h-screen`}>
         <I18nProvider t={t} intl={intl}>
-          <HideOnHome>
-          <header className="border-b border-sea-900 bg-sea-900 text-white">
-            <div className="mx-auto flex max-w-5xl flex-wrap items-center justify-between gap-2 px-4 py-3">
-              <Link href="/" className="flex items-center gap-2 text-lg font-bold tracking-tight">
-                <span aria-hidden>⛵</span> windracehub
+          {/* thin vertical grid lines over the whole page */}
+          <div aria-hidden className="pointer-events-none fixed inset-0 -z-10 grid grid-cols-6 px-4 sm:px-8 lg:grid-cols-12">
+            {Array.from({ length: 12 }, (_, i) => <div key={i} className={`border-l border-ink/10 ${i >= 6 ? "hidden lg:block" : ""}`} />)}
+          </div>
+          <header className="flex flex-wrap items-stretch border-y-2 border-ink">
+            <Link href="/" className="order-1 flex flex-1 items-center px-4 py-3 text-base font-bold tracking-tight sm:flex-none sm:px-8">WINDRACEHUB</Link>
+              <Link href={user ? "/me" : "/login"} className="order-2 flex items-center gap-2 bg-accent sm:order-3 px-5 py-3 text-xs font-bold uppercase tracking-wide text-ink hover:brightness-105 sm:px-8 sm:text-sm">
+                {user ? t.nav.myEntries : t.nav.login} <span aria-hidden>→</span>
               </Link>
-              <nav className="flex flex-wrap items-center gap-x-4 gap-y-2 text-sm">
-                <Link href="/regatten" className="hover:underline">{t.nav.regattas}</Link>
-                <Link href="/clubs" className="hover:underline">{t.nav.clubs}</Link>
-                {user ? (
-                  <>
-                    <Link href="/me" className="hover:underline">{t.nav.myEntries}</Link>
-                    {showManage && <Link href="/manage" className="hover:underline">{t.nav.myEvents}</Link>}
-                    {user.role === "ADMIN" && <Link href="/admin" className="hover:underline">{t.nav.admin}</Link>}
-                    <form action="/logout" method="post">
-                      <button className="text-sea-200 hover:underline" title={`${user.name} · ${t.roles[user.role]}`}>{t.nav.logout}</button>
-                    </form>
-                  </>
-                ) : (
-                  <Link href="/login" className="rounded-md bg-white/10 px-3 py-1.5 hover:bg-white/20">{t.nav.login}</Link>
-                )}
-                <Suspense><LangSwitch current={locale} /></Suspense>
-              </nav>
-            </div>
+
+            <nav className="order-3 flex w-full flex-wrap items-stretch border-t-2 border-ink sm:order-2 sm:ml-auto sm:w-auto sm:border-t-0">
+              <Link href="/regatten" className="navcell first:border-l-0 sm:first:border-l-2">{t.nav.regattas}</Link>
+              <Link href="/clubs" className="navcell">{t.nav.clubs}</Link>
+              <Link href="/klassen" className="navcell">{t.nav.classes}</Link>
+              {user && showManage && <Link href="/manage" className="navcell">{t.nav.myEvents}</Link>}
+              {user?.role === "ADMIN" && <Link href="/admin" className="navcell">{t.nav.admin}</Link>}
+              {user && (
+                <form action="/logout" method="post" className="flex">
+                  <button className="navcell" title={`${user.name} · ${t.roles[user.role]}`}>{t.nav.logout}</button>
+                </form>
+              )}
+              <div className="navcell"><Suspense><LangSwitch current={locale} /></Suspense></div>
+            </nav>
           </header>
-          </HideOnHome>
-          <main className="mx-auto max-w-5xl px-4 py-6">{children}</main>
-          <HideOnHome><footer className="mx-auto max-w-5xl px-4 py-8 text-xs text-slate-500">{t.footer}</footer></HideOnHome>
+          <main className="px-4 sm:px-8"><PageWidth>{children}</PageWidth></main>
+          <footer className="mt-8 flex flex-wrap items-center justify-between gap-2 border-t-2 border-ink px-4 py-4 text-[11px] font-medium uppercase tracking-wide sm:px-8">
+            <span>{t.footer}</span>
+            <Link href="/veranstalten" className="opacity-70 hover:underline hover:opacity-100">{t.nav.host} →</Link>
+          </footer>
         </I18nProvider>
       </body>
     </html>

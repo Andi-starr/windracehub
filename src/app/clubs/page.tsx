@@ -15,15 +15,15 @@ export default async function ClubsPage({ searchParams }: { searchParams: Promis
   });
   return (
     <div className="space-y-4">
-      <h1 className="text-2xl font-bold text-sea-900">{t.home.clubsTitle}</h1>
+      <h1 className="h1">{t.home.clubsTitle}</h1>
       <p className="text-sm text-slate-600">{t.home.clubsIntro}</p>
       <form className="flex gap-2"><input name="q" defaultValue={q} placeholder={t.common.club} className="input max-w-sm" /><button className="btn-ghost">{t.common.search}</button></form>
-      <ul className="grid gap-2 sm:grid-cols-2">
+      <ul className="grid gap-x-8 sm:grid-cols-2">
         {clubs.map((c) => (
           <li key={c.id}>
-            <Link href={`/regatten?club=${c.id}&zeit=alle`} className="flex items-center justify-between gap-3 rounded-xl border border-slate-200 bg-white px-4 py-3 shadow-sm hover:border-sea-500">
+            <Link href={`/regatten?club=${c.id}&zeit=alle`} className="flex items-center justify-between gap-3 border-b border-ink/15 py-3 hover:bg-ink/5">
               <span><span className="font-semibold">{c.name}</span>{c.shortName && <span className="text-slate-500"> · {c.shortName}</span>}</span>
-              <span className="badge bg-sea-100 text-sea-700">{c._count.events} {t.home.events}</span>
+              <span className="text-[11px] font-medium uppercase tracking-wide tabular-nums">{c._count.events} {t.home.events}</span>
             </Link>
           </li>
         ))}

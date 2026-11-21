@@ -85,7 +85,7 @@ export function RaceClock({ initial, className, official = false }: { initial: R
 
       <div className="text-center">
         {startAt && live
-          ? <div className="font-mono text-7xl font-bold tabular-nums sm:text-8xl" suppressHydrationWarning>{fmtCountdown(now - startAt)}</div>
+          ? <div className="font-mono text-5xl font-bold tabular-nums min-[400px]:text-6xl sm:text-8xl" suppressHydrationWarning>{fmtCountdown(now - startAt)}</div>
           : <div className="py-6 text-3xl font-bold">{race.status === "FINISHED" ? "🏁 " : ""}{t.race.status[race.status as "PLANNED"]}</div>}
         {startAt && live && <div className="mt-1 text-sm text-sea-200">{now < startAt ? t.race.startIn : t.race.sinceStart} · {t.race.startAt} {new Intl.DateTimeFormat(intl, { timeZone: "Europe/Zurich", hour: "2-digit", minute: "2-digit", second: "2-digit" }).format(startAt)}</div>}
       </div>

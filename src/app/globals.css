@@ -1,28 +1,45 @@
 @import "tailwindcss";
 
+/* Editorial look (front page reference): light grey, thin grid lines, square corners, black type, orange accent. */
 @theme {
-  --color-sea-50: #f0f7fb;
-  --color-sea-100: #dcecf5;
-  --color-sea-200: #b5d6e8;
-  --color-sea-500: #1f7aa8;
-  --color-sea-600: #17668e;
-  --color-sea-700: #125272;
-  --color-sea-900: #0b2f42;
-  --font-sans: var(--font-inter), system-ui, sans-serif;
+  --color-sea-50: #f1f2f3;
+  --color-sea-100: #e8e9eb;
+  --color-sea-200: #cfd2d6;
+  --color-sea-500: #ff5f1f;
+  --color-sea-600: #ff5f1f;
+  --color-sea-700: #c2410c;
+  --color-sea-900: #151515;
+  --color-ink: #151515;
+  --color-paper: #e3e5e8;
+  --color-accent: #ff5f1f;
+  --font-sans: var(--font-grotesk), system-ui, sans-serif;
+  --radius-sm: 0px;
+  --radius-md: 0px;
+  --radius-lg: 0px;
+  --radius-xl: 0px;
+  --radius-2xl: 0px;
+  --shadow-sm: none;
+  --shadow: none;
+  --shadow-md: none;
+  --shadow-lg: none;
 }
 
+html { background: var(--color-paper); }
+
 body {
-  @apply bg-slate-50 text-slate-900 antialiased;
+  @apply bg-paper text-ink antialiased;
   overflow-x: clip;
 }
 
 @layer components {
-  .card { @apply rounded-xl border border-slate-200 bg-white p-5 shadow-sm; }
-  .btn { @apply inline-flex items-center justify-center gap-2 rounded-lg bg-sea-600 px-4 py-2 text-sm font-semibold text-white hover:bg-sea-700 disabled:opacity-50; }
-  .btn-ghost { @apply inline-flex items-center justify-center gap-2 rounded-lg border border-slate-300 bg-white px-4 py-2 text-sm font-medium text-slate-700 hover:bg-slate-100; }
-  .btn-danger { @apply inline-flex items-center justify-center rounded-md px-2 py-1 text-xs font-medium text-red-700 hover:bg-red-50; }
-  .input { @apply w-full rounded-lg border border-slate-300 bg-white px-3 py-2 text-sm focus:border-sea-500 focus:ring-2 focus:ring-sea-200 focus:outline-none; }
-  .label { @apply mb-1 block text-sm font-medium text-slate-700; }
-  .h2 { @apply mb-3 text-lg font-semibold text-slate-900; }
+  .card { @apply border border-ink/15 bg-white/70 p-5; }
+  .btn { @apply inline-flex items-center justify-center gap-2 bg-accent px-4 py-2 text-xs font-medium uppercase tracking-wide text-ink hover:brightness-105 disabled:opacity-50; }
+  .btn-ghost { @apply inline-flex items-center justify-center gap-2 border border-ink bg-transparent px-4 py-2 text-xs font-medium uppercase tracking-wide text-ink hover:bg-ink/5; }
+  .btn-danger { @apply inline-flex items-center justify-center px-2 py-1 text-xs font-medium uppercase tracking-wide text-red-700 hover:bg-red-50; }
+  .input { @apply w-full border border-ink/40 bg-white px-3 py-2 text-sm focus:border-ink focus:ring-1 focus:ring-ink focus:outline-none; }
+  .label { @apply mb-1 block text-[11px] font-medium uppercase tracking-wide text-ink/70; }
+  .h1 { @apply text-3xl font-medium uppercase leading-none tracking-tight text-ink sm:text-5xl; }
+  .h2 { @apply mb-4 border-b-2 border-ink pb-2 text-lg font-medium uppercase tracking-tight text-ink; }
   .badge { @apply inline-flex items-center rounded-full px-2 py-0.5 text-xs font-medium; }
+  .navcell { @apply flex items-center border-l-2 border-ink px-3 py-3 text-[11px] font-medium uppercase tracking-wide hover:bg-ink/5 sm:px-5 sm:text-xs; }
 }
