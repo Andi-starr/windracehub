@@ -1,6 +1,6 @@
 # windracehub
 
-Regatten in der Region Zürich: Ausschreibungen, Segelanweisungen, Mitteilungen, Resultate und Meldelisten an einem Ort.
+Regatten in der Schweiz: Ausschreibungen, Segelanweisungen, Mitteilungen, Resultate und Meldelisten an einem Ort.
 Eine einfache Alternative zu manage2sail, gebaut für Organisatoren und Wettfahrtleitungen.
 
 ## Was es kann
@@ -8,7 +8,11 @@ Eine einfache Alternative zu manage2sail, gebaut für Organisatoren und Wettfahr
 - **Öffentlich:** Regattaliste (Suche, Club, Klasse, kommend/vergangen), Eventseite mit Dokumenten, Mitteilungen ("Neu"-Badge 48 h), Resultaten pro Klasse (provisorisch/final, frühere Stände), Meldeliste, Programm, Kalender-Export (.ics).
 - **Organisator (Host):** Regatta mit einem Formular erstellen (nur Name + Datum Pflicht), alles auf einer Seite bearbeiten, für nächstes Jahr kopieren, veröffentlichen/verbergen/absagen, Team einladen (Link per E-Mail/WhatsApp).
 - **Wettfahrtleitung (Official):** PDFs reinziehen → Art wird aus dem Dateinamen erraten → veröffentlichen. Resultate als Sailwave-HTML, CSV oder direkt aus Excel einfügen (Vorschau vor dem Veröffentlichen) oder als PDF.
-- Der erste registrierte Benutzer wird Admin und sieht alle Regatten.
+- **Teilnehmer:** Konto erstellen, Boot + Crew melden (Boote werden gespeichert), «Meine Meldungen».
+- **Startuhr:** Startverfahren 5-4-1-0 / 3-2-1-0 / 10-5-4-1-0 / 6-5-4-1-0, Flaggen, Töne, AP, Allgemeiner Rückruf, N. Uhr wird mit dem Server synchronisiert (NTP-Prinzip), Teilnehmer sehen dieselbe Live-Uhr.
+- **Zieleinlauf & Wertung:** Antippen = Zieldurchgang, Codes (DNF, OCS, …), Low-Point mit Streichern, optional Yardstick, «Berechnen & veröffentlichen».
+- **Rollen:** Admin (erster Benutzer), Veranstalter (darf Regatten erstellen), Teilnehmer (Standard). Rollen unter /admin.
+- **Sprachen:** Deutsch, English, Français.
 
 ## Stack
 
@@ -20,7 +24,7 @@ Next.js 15 (App Router, Server Actions) · Prisma · Postgres (Supabase) · Supa
 npm install
 # Postgres lokal oder Supabase-URL in .env (siehe .env.example)
 npx prisma migrate deploy
-npm run seed        # 60 Zürcher Regatten 2026 aus manage2sail (Titel, Datum, Ort, Club, Link)
+npm run seed        # ~440 Schweizer Regatten 2026 aus manage2sail (Titel, Datum, Ort, Club, Link)
 npm run dev
 ```
 

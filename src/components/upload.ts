@@ -8,6 +8,6 @@ export async function uploadFile(eventId: string, file: File) {
   body.append("cacheControl", "3600");
   body.append("", file);
   const res = await fetch(url, { method: "PUT", body, headers: { "x-upsert": "false" } });
-  if (!res.ok) throw new Error(`Upload fehlgeschlagen (${res.status})`);
+  if (!res.ok) throw new Error(`Upload ${res.status}`);
   return key;
 }

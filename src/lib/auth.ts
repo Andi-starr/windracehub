@@ -4,7 +4,7 @@ import { redirect } from "next/navigation";
 import { randomBytes } from "crypto";
 import bcrypt from "bcryptjs";
 import { db } from "./db";
-import type { Role } from "@prisma/client";
+import type { Role, UserRole } from "@prisma/client";
 
 const COOKIE = "wrh_session";
 const DAYS = 30;
@@ -53,12 +53,20 @@ export async function requireUser() {
 /** Returns the user's role for the event, or throws/redirects if none. Admins count as HOST. */
 export async function requireEventRole(eventId: string, need: Role | "ANY" = "ANY") {
   const user = await requireUser();
-  if (user.isAdmin) return { user, role: "HOST" as Role };
+  if (user.role === "ADMIN") return { user, role: "HOST" as Role };
   const r = await db.eventRole.findUnique({ where: { userId_eventId: { userId: user.id, eventId } } });
   if (!r) redirect("/manage");
   if (need === "HOST" && r.role !== "HOST") redirect(`/manage/${eventId}`);
   return { user, role: r.role };
 }
+
+export async function requireRole(...roles: UserRole[]) {
+  const user = await requireUser();
+  if (!roles.includes(user.role)) redirect("/manage");
+  return user;
+}
+
+export const canHost = (u: { role: UserRole } | null) => !!u && (u.role === "ADMIN" || u.role === "HOST");
 
 export function newToken() {
   return randomBytes(24).toString("base64url");

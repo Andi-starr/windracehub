@@ -4,20 +4,26 @@ import { notFound } from "next/navigation";
 import { db } from "@/lib/db";
 import { requireEventRole } from "@/lib/auth";
 import { publicUrl } from "@/lib/storage";
-import { DOC_TYPES, fmtDateTime, fmtRange, fmtTime, fmtDate, toDayInput, toZurichInput } from "@/lib/format";
+import { DOC_TYPE_KEYS, fmtDateTime, fmtRange, fmtTime, fmtDate, toDayInput, toZurichInput } from "@/lib/format";
+import { getT } from "@/i18n";
 import { EventForm } from "@/components/EventForm";
 import { DocUploader } from "@/components/DocUploader";
 import { ResultUploader } from "@/components/ResultUploader";
 import { ConfirmButton, EntriesForm, InviteForm } from "@/components/ActionForms";
 import * as A from "../actions";
+import { addRace } from "../races";
 
 export const dynamic = "force-dynamic";
-export const metadata = { title: "Regatta verwalten" };
+export const metadata = { title: "Manage" };
+
+const SEQS = ["5,4,1,0", "3,2,1,0", "10,5,4,1,0", "6,5,4,1,0"] as const;
+const PREP = ["P", "I", "Z", "U", "BLACK"];
 
 export default async function ManageEvent({ params, searchParams }: { params: Promise<{ id: string }>; searchParams: Promise<{ neu?: string }> }) {
   const { id } = await params;
   const { neu } = await searchParams;
   const { role } = await requireEventRole(id);
+  const { t, intl } = await getT();
   const e = await db.event.findUnique({
     where: { id },
     include: {
@@ -26,63 +32,71 @@ export default async function ManageEvent({ params, searchParams }: { params: Pr
       schedule: { orderBy: { at: "asc" } },
       documents: { orderBy: { publishedAt: "desc" } },
       results: { orderBy: { publishedAt: "desc" }, include: { eventClass: true } },
-      entries: { include: { eventClass: true } },
+      entries: { include: { eventClass: true }, orderBy: [{ classId: "asc" }, { sailNumber: "asc" }] },
       roles: { include: { user: true } },
       invites: { where: { acceptedAt: null }, orderBy: { createdAt: "desc" } },
+      races: { include: { eventClass: true, _count: { select: { finishes: true } } }, orderBy: [{ classId: "asc" }, { number: "asc" }] },
     },
   });
   if (!e) notFound();
   const host = role === "HOST";
-  const clubs = (await db.club.findMany({ orderBy: { name: "asc" } })).map((c) => c.name);
+  const clubs = (await db.club.findMany({ orderBy: { name: "asc" }, select: { name: true } })).map((c) => c.name);
   const h = await headers();
   const base = process.env.APP_URL || `${h.get("x-forwarded-proto") ?? "http"}://${h.get("host")}`;
-  const entriesText = e.entries.map((x) => [x.eventClass?.name ?? "", x.sailNumber ?? "", x.boatName ?? "", x.skipper ?? "", x.club ?? ""].join("\t")).join("\n");
+  const pasted = e.entries.filter((x) => !x.userId);
+  const entriesText = pasted.map((x) => [x.eventClass?.name ?? "", x.sailNumber ?? "", x.boatName ?? "", x.skipper ?? "", x.club ?? "", x.handicap ?? ""].join("\t")).join("\n");
 
   return (
     <div className="space-y-6">
       <div className="card flex flex-wrap items-center justify-between gap-3">
         <div>
-          <p className="text-sm text-slate-500">{fmtRange(e.startDate, e.endDate)} · {e.club?.name ?? "ohne Club"}</p>
+          <p className="text-sm text-slate-500">{fmtRange(e.startDate, e.endDate, intl)} · {e.club?.name ?? t.manage.noClub}</p>
           <h1 className="text-xl font-bold text-sea-900">{e.title}</h1>
           <p className="mt-1 text-sm">
-            {e.status === "DRAFT" && <span className="badge bg-amber-100 text-amber-800">Entwurf, nicht öffentlich</span>}
-            {e.status === "PUBLISHED" && <span className="badge bg-emerald-100 text-emerald-800">Öffentlich</span>}
-            {e.status === "CANCELLED" && <span className="badge bg-red-100 text-red-700">Abgesagt</span>}
-            {!host && <span className="badge ml-2 bg-slate-100 text-slate-600">Du bist Wettfahrtleitung</span>}
+            {e.status === "DRAFT" && <span className="badge bg-amber-100 text-amber-800">{t.status.draftHidden}</span>}
+            {e.status === "PUBLISHED" && <span className="badge bg-emerald-100 text-emerald-800">{t.status.PUBLISHED}</span>}
+            {e.status === "CANCELLED" && <span className="badge bg-red-100 text-red-700">{t.status.CANCELLED}</span>}
+            {!host && <span className="badge ml-2 bg-slate-100 text-slate-600">{t.manage.youAreOfficial}</span>}
           </p>
         </div>
         <div className="flex flex-wrap gap-2">
-          <Link href={`/e/${e.slug}`} className="btn-ghost" target="_blank">Öffentliche Seite ↗</Link>
+          <Link href={`/e/${e.slug}`} className="btn-ghost" target="_blank">{t.manage.publicPage}</Link>
           {host && e.status !== "PUBLISHED" && (
-            <form action={A.setStatus.bind(null, e.id, "PUBLISHED")}><button className="btn">Veröffentlichen</button></form>
+            <form action={A.setStatus.bind(null, e.id, "PUBLISHED")}><button className="btn">{t.manage.publish}</button></form>
           )}
           {host && e.status === "PUBLISHED" && (
-            <form action={A.setStatus.bind(null, e.id, "DRAFT")}><button className="btn-ghost">Verbergen</button></form>
+            <form action={A.setStatus.bind(null, e.id, "DRAFT")}><button className="btn-ghost">{t.manage.hide}</button></form>
           )}
         </div>
       </div>
 
-      {neu && e.status === "DRAFT" && <div className="rounded-lg bg-emerald-50 px-4 py-3 text-sm text-emerald-900">Regatta erstellt. Lade jetzt die Ausschreibung hoch und klicke oben auf <strong>Veröffentlichen</strong>.</div>}
+      {neu && e.status === "DRAFT" && <div className="rounded-lg bg-emerald-50 px-4 py-3 text-sm text-emerald-900">{t.manage.created}</div>}
 
-      <section className="card">
-        <h2 className="h2">Dokument veröffentlichen</h2>
+      <nav className="flex flex-wrap gap-2 text-sm">
+        {[["#docs", t.event.docs], ["#entries", t.event.entries], ["#races", t.manage.racesTitle], ["#results", t.event.results], ...(host ? [["#details", t.manage.details], ["#team", t.manage.team]] : [])].map(([href, label]) => (
+          <a key={href} href={href} className="rounded-full border border-slate-300 bg-white px-3 py-1 hover:border-sea-500">{label}</a>
+        ))}
+      </nav>
+
+      <section id="docs" className="card">
+        <h2 className="h2">{t.manage.publishDoc}</h2>
         <DocUploader eventId={e.id} />
         {e.documents.length > 0 && (
           <div className="mt-5">
-            <h3 className="mb-2 text-sm font-semibold text-slate-600">Veröffentlicht ({e.documents.length})</h3>
+            <h3 className="mb-2 text-sm font-semibold text-slate-600">{t.manage.published} ({e.documents.length})</h3>
             <ul className="divide-y divide-slate-100 rounded-lg border border-slate-200">
               {e.documents.map((d) => (
                 <li key={d.id} className="flex flex-col gap-2 p-3 text-sm sm:flex-row sm:items-center">
                   <form action={A.updateDocument.bind(null, e.id, d.id)} className="flex flex-1 flex-col gap-2 sm:flex-row sm:items-center">
-                    <input name="title" defaultValue={d.title} className="input flex-1" aria-label="Titel" />
-                    <select name="type" defaultValue={d.type} className="input sm:w-52" aria-label="Art">
-                      {Object.entries(DOC_TYPES).map(([k, v]) => <option key={k} value={k}>{v}</option>)}
+                    <input name="title" defaultValue={d.title} className="input flex-1" aria-label={t.upload.resTitle} />
+                    <select name="type" defaultValue={d.type} className="input sm:w-52" aria-label={t.upload.resStatus}>
+                      {DOC_TYPE_KEYS.map((k) => <option key={k} value={k}>{t.docTypes[k]}</option>)}
                     </select>
-                    <button className="btn-ghost px-3 py-1.5 text-xs">Speichern</button>
+                    <button className="btn-ghost px-3 py-1.5 text-xs">{t.common.save}</button>
                   </form>
-                  <span className="text-xs text-slate-500 sm:w-36">{fmtDateTime(d.publishedAt)}{d.uploadedBy ? ` · ${d.uploadedBy}` : ""}</span>
-                  <a href={publicUrl(d.fileKey)} target="_blank" rel="noreferrer" className="text-xs text-sea-600 underline">Ansehen</a>
-                  <ConfirmButton action={A.deleteDocument.bind(null, e.id, d.id)} label="Löschen" question={`"${d.title}" löschen?`} />
+                  <span className="text-xs text-slate-500 sm:w-36">{fmtDateTime(d.publishedAt, intl)}{d.uploadedBy ? ` · ${d.uploadedBy}` : ""}</span>
+                  <a href={publicUrl(d.fileKey)} target="_blank" rel="noreferrer" className="text-xs text-sea-600 underline">{t.common.view}</a>
+                  <ConfirmButton action={A.deleteDocument.bind(null, e.id, d.id)} label={t.common.delete} question={`"${d.title}" – ${t.common.delete}?`} />
                 </li>
               ))}
             </ul>
@@ -90,41 +104,110 @@ export default async function ManageEvent({ params, searchParams }: { params: Pr
         )}
       </section>
 
-      <section className="card">
-        <h2 className="h2">Resultate veröffentlichen</h2>
+      <section id="entries" className="card space-y-4">
+        <h2 className="h2">{t.manage.entriesTitle} ({e.entries.length})</h2>
+        {host && (
+          <form action={A.setEntryOptions.bind(null, e.id)} className="flex flex-wrap items-end gap-4 rounded-lg bg-slate-50 p-3 text-sm">
+            <label className="flex items-center gap-2 font-medium"><input type="checkbox" name="entriesOpen" defaultChecked={e.entriesOpen} /> {t.manage.entriesOpen}</label>
+            <div>
+              <label className="label" htmlFor="discards">{t.manage.discards}</label>
+              <input id="discards" name="discards" defaultValue={e.discards ?? ""} placeholder="4:1,8:2" className="input w-32" title={t.manage.discardsHint} />
+            </div>
+            <button className="btn-ghost">{t.common.save}</button>
+            <p className="w-full text-xs text-slate-500">{t.manage.entriesOpenHint} {t.manage.discardsHint}.</p>
+          </form>
+        )}
+        {e.entries.length > 0 && (
+          <div className="overflow-x-auto rounded-lg border border-slate-200">
+            <table className="min-w-full text-sm">
+              <thead className="bg-slate-100 text-left text-xs uppercase text-slate-600">
+                <tr>{[t.common.class, t.event.sailNo, t.event.boat, t.event.skipper, t.event.crew, t.common.club, t.manage.handicap, ""].map((x, i) => <th key={i} className="px-3 py-2">{x}</th>)}</tr>
+              </thead>
+              <tbody className="divide-y divide-slate-100">
+                {e.entries.map((x) => (
+                  <tr key={x.id}>
+                    <td className="px-3 py-1.5">{x.eventClass?.name}</td><td className="px-3 py-1.5 font-semibold">{x.sailNumber}</td><td className="px-3 py-1.5">{x.boatName}</td>
+                    <td className="px-3 py-1.5">{x.skipper} {x.userId && <span className="badge bg-sea-100 text-sea-700">{t.manage.onlineEntries}</span>}</td>
+                    <td className="px-3 py-1.5">{x.crew}</td><td className="px-3 py-1.5">{x.club}</td><td className="px-3 py-1.5">{x.handicap ?? ""}</td>
+                    <td className="px-3 py-1.5"><ConfirmButton action={A.deleteEntry.bind(null, e.id, x.id)} label={t.common.remove} question={`${x.sailNumber} – ${t.common.remove}?`} /></td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
+        )}
+        <details>
+          <summary className="cursor-pointer text-sm font-medium text-sea-700">Excel → {t.manage.entriesSave}</summary>
+          <div className="mt-2"><EntriesForm action={A.replaceEntries.bind(null, e.id)} initial={entriesText} /></div>
+        </details>
+      </section>
+
+      <section id="races" className="card">
+        <h2 className="h2">{t.manage.racesTitle}</h2>
+        {e.races.length === 0 && <p className="mb-3 text-sm text-slate-500">{t.race.none}</p>}
+        {e.races.length > 0 && (
+          <ul className="mb-4 divide-y divide-slate-100 rounded-lg border border-slate-200 text-sm">
+            {e.races.map((r) => (
+              <li key={r.id} className="flex flex-wrap items-center gap-3 p-3">
+                <Link href={`/manage/${e.id}/race/${r.id}`} className="font-semibold text-sea-700 underline">{r.eventClass?.name ?? t.common.all} · {t.race.title} {r.number}</Link>
+                <span className="badge bg-slate-100 text-slate-700">{t.race.status[r.status]}</span>
+                {r.startAt && <span className="text-slate-500">{t.race.startAt} {fmtTime(r.startAt, intl)}</span>}
+                <span className="text-slate-500">{r._count.finishes} {t.race.finishes}</span>
+                <Link href={`/manage/${e.id}/race/${r.id}`} className="btn ml-auto px-3 py-1.5 text-xs">{t.race.startClock} →</Link>
+              </li>
+            ))}
+          </ul>
+        )}
+        <form action={addRace.bind(null, e.id)} className="flex flex-wrap items-end gap-2">
+          <div>
+            <label className="label" htmlFor="race-class">{t.common.class}</label>
+            <select id="race-class" name="classId" className="input">
+              {e.classes.map((c) => <option key={c.id} value={c.id}>{c.name}</option>)}
+              <option value="">{t.common.all}</option>
+            </select>
+          </div>
+          <div>
+            <label className="label" htmlFor="race-seq">{t.race.sequence}</label>
+            <select id="race-seq" name="sequence" className="input">{SEQS.map((s) => <option key={s} value={s}>{t.race.sequences[s]}</option>)}</select>
+          </div>
+          <div>
+            <label className="label" htmlFor="race-prep">{t.race.prepFlag}</label>
+            <select id="race-prep" name="prepFlag" className="input">{PREP.map((p) => <option key={p} value={p}>{p}</option>)}</select>
+          </div>
+          <button className="btn">{t.race.add}</button>
+        </form>
+      </section>
+
+      <section id="results" className="card">
+        <h2 className="h2">{t.manage.publishResults}</h2>
         <ResultUploader eventId={e.id} classes={e.classes.map((c) => ({ id: c.id, name: c.name }))} />
         {e.results.length > 0 && (
           <div className="mt-5">
-            <h3 className="mb-2 text-sm font-semibold text-slate-600">Veröffentlicht ({e.results.length}). Pro Klasse wird der neueste Stand angezeigt.</h3>
+            <h3 className="mb-2 text-sm font-semibold text-slate-600">{t.manage.published} ({e.results.length}). {t.manage.newestPerClass}</h3>
             <ul className="divide-y divide-slate-100 rounded-lg border border-slate-200">
               {e.results.map((r) => (
                 <li key={r.id} className="flex flex-wrap items-center gap-3 p-3 text-sm">
-                  <span className="flex-1 font-medium">{r.eventClass?.name ?? "Gesamt"}{r.title !== r.eventClass?.name ? ` · ${r.title}` : ""}</span>
-                  <span className="text-xs text-slate-500">{Array.isArray(r.rows) ? `${(r.rows as unknown[]).length} Zeilen` : ""}{r.fileName ? ` · ${r.fileName}` : ""} · {fmtDateTime(r.publishedAt)}</span>
+                  <span className="flex-1 font-medium">{r.eventClass?.name ?? t.common.total}{r.title !== r.eventClass?.name ? ` · ${r.title}` : ""}</span>
+                  <span className="text-xs text-slate-500">{Array.isArray(r.rows) ? `${(r.rows as unknown[]).length} ${t.common.rows}` : ""}{r.fileName ? ` · ${r.fileName}` : ""} · {fmtDateTime(r.publishedAt, intl)}</span>
                   <form action={A.toggleResultFinal.bind(null, e.id, r.id)}>
-                    <button className={`badge ${r.provisional ? "bg-amber-100 text-amber-800" : "bg-emerald-100 text-emerald-800"}`} title="Status wechseln">{r.provisional ? "Provisorisch" : "Final"} ⇄</button>
+                    <button className={`badge ${r.provisional ? "bg-amber-100 text-amber-800" : "bg-emerald-100 text-emerald-800"}`} title={t.manage.toggleStatus}>{r.provisional ? t.event.provisional : t.event.final} ⇄</button>
                   </form>
-                  <ConfirmButton action={A.deleteResult.bind(null, e.id, r.id)} label="Löschen" question="Diese Resultate löschen?" />
+                  <ConfirmButton action={A.deleteResult.bind(null, e.id, r.id)} label={t.common.delete} question={t.manage.confirmDeleteResult} />
                 </li>
               ))}
             </ul>
           </div>
         )}
-      </section>
-
-      <section className="card">
-        <h2 className="h2">Meldeliste</h2>
-        <EntriesForm action={A.replaceEntries.bind(null, e.id)} initial={entriesText} />
       </section>
 
       {host && (
         <>
-          <section className="card">
-            <h2 className="h2">Angaben zur Regatta</h2>
+          <section id="details" className="card">
+            <h2 className="h2">{t.manage.details}</h2>
             <EventForm
               action={A.updateEvent.bind(null, e.id)}
               clubs={clubs}
-              submit="Änderungen speichern"
+              submit={t.manage.saveChanges}
               defaults={{
                 title: e.title, club: e.club?.name ?? "", venue: e.venue ?? "", startDate: toDayInput(e.startDate), endDate: toDayInput(e.endDate),
                 classes: e.classes.map((c) => c.name).join(", "), entryUrl: e.entryUrl ?? "", entryInfo: e.entryInfo ?? "",
@@ -134,41 +217,41 @@ export default async function ManageEvent({ params, searchParams }: { params: Pr
           </section>
 
           <section className="card">
-            <h2 className="h2">Programm</h2>
+            <h2 className="h2">{t.event.schedule}</h2>
             {e.schedule.length > 0 && (
               <ul className="mb-3 divide-y divide-slate-100 text-sm">
                 {e.schedule.map((s) => (
                   <li key={s.id} className="flex items-center gap-3 py-2">
-                    <span className="w-36 font-medium text-sea-700">{fmtDate(s.at, { weekday: "short", day: "numeric", month: "short" })} {fmtTime(s.at)}</span>
+                    <span className="w-40 font-medium text-sea-700">{fmtDate(s.at, { weekday: "short", day: "numeric", month: "short" }, intl)} {fmtTime(s.at, intl)}</span>
                     <span className="flex-1">{s.title}</span>
-                    <form action={A.deleteScheduleItem.bind(null, e.id, s.id)}><button className="btn-danger">Entfernen</button></form>
+                    <form action={A.deleteScheduleItem.bind(null, e.id, s.id)}><button className="btn-danger">{t.common.remove}</button></form>
                   </li>
                 ))}
               </ul>
             )}
             <form action={A.addScheduleItem.bind(null, e.id)} className="flex flex-col gap-2 sm:flex-row">
               <input name="at" type="datetime-local" required className="input sm:w-56" defaultValue={toZurichInput(new Date(e.startDate.getTime() + 9 * 3600e3)).slice(0, 11) + "10:00"} />
-              <input name="title" required placeholder="z.B. Erster Start" className="input flex-1" />
-              <button className="btn">Hinzufügen</button>
+              <input name="title" required placeholder={t.manage.addSchedulePh} className="input flex-1" />
+              <button className="btn">{t.common.add}</button>
             </form>
           </section>
 
-          <section className="card">
-            <h2 className="h2">Team</h2>
-            <p className="mb-3 text-sm text-slate-600">Die <strong>Wettfahrtleitung</strong> kann Dokumente, Resultate und die Meldeliste hochladen. <strong>Organisatoren</strong> können zusätzlich alles bearbeiten.</p>
+          <section id="team" className="card">
+            <h2 className="h2">{t.manage.team}</h2>
+            <p className="mb-3 text-sm text-slate-600">{t.manage.teamIntro}</p>
             <ul className="mb-3 divide-y divide-slate-100 text-sm">
               {e.roles.map((r) => (
                 <li key={r.userId} className="flex items-center gap-3 py-2">
                   <span className="flex-1">{r.user.name} <span className="text-slate-500">{r.user.email}</span></span>
-                  <span className="badge bg-slate-100 text-slate-700">{r.role === "HOST" ? "Organisator" : "Wettfahrtleitung"}</span>
-                  <form action={A.removeMember.bind(null, e.id, r.userId)}><button className="btn-danger">Entfernen</button></form>
+                  <span className="badge bg-slate-100 text-slate-700">{r.role === "HOST" ? t.roles.HOST : t.roles.OFFICIAL}</span>
+                  <form action={A.removeMember.bind(null, e.id, r.userId)}><button className="btn-danger">{t.common.remove}</button></form>
                 </li>
               ))}
               {e.invites.map((i) => (
-                <li key={i.token} className="flex items-center gap-3 py-2 text-slate-500">
-                  <span className="flex-1">{i.email} (eingeladen)</span>
-                  <input readOnly className="input w-64 font-mono text-[10px]" value={`${base}/invite/${i.token}`} aria-label="Einladungslink" />
-                  <form action={A.revokeInvite.bind(null, e.id, i.token)}><button className="btn-danger">Zurückziehen</button></form>
+                <li key={i.token} className="flex flex-wrap items-center gap-3 py-2 text-slate-500">
+                  <span className="flex-1">{i.email} ({t.manage.invited})</span>
+                  <input readOnly className="input w-64 font-mono text-[10px]" value={`${base}/invite/${i.token}`} aria-label={t.manage.inviteLink} />
+                  <form action={A.revokeInvite.bind(null, e.id, i.token)}><button className="btn-danger">{t.manage.revoke}</button></form>
                 </li>
               ))}
             </ul>
@@ -176,12 +259,12 @@ export default async function ManageEvent({ params, searchParams }: { params: Pr
           </section>
 
           <section className="card border-red-200">
-            <h2 className="h2 text-red-800">Absagen oder löschen</h2>
+            <h2 className="h2 text-red-800">{t.manage.danger}</h2>
             <div className="flex flex-wrap gap-2">
               {e.status !== "CANCELLED"
-                ? <ConfirmButton className="btn-ghost" action={A.setStatus.bind(null, e.id, "CANCELLED")} label="Regatta absagen" question="Regatta als abgesagt markieren? Sie bleibt sichtbar." />
-                : <form action={A.setStatus.bind(null, e.id, "PUBLISHED")}><button className="btn-ghost">Absage zurücknehmen</button></form>}
-              <ConfirmButton className="btn-ghost text-red-700" action={A.deleteEvent.bind(null, e.id)} label="Endgültig löschen" question="Regatta mit allen Dokumenten und Resultaten endgültig löschen?" />
+                ? <ConfirmButton className="btn-ghost" action={A.setStatus.bind(null, e.id, "CANCELLED")} label={t.manage.cancelEvent} question={t.manage.cancelQ} />
+                : <form action={A.setStatus.bind(null, e.id, "PUBLISHED")}><button className="btn-ghost">{t.manage.uncancel}</button></form>}
+              <ConfirmButton className="btn-ghost text-red-700" action={A.deleteEvent.bind(null, e.id)} label={t.manage.deleteForever} question={t.manage.deleteQ} />
             </div>
           </section>
         </>

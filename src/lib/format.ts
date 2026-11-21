@@ -1,26 +1,26 @@
 const TZ = "Europe/Zurich";
 
-export function fmtDate(d: Date, opts: Intl.DateTimeFormatOptions = { day: "numeric", month: "short", year: "numeric" }) {
-  return new Intl.DateTimeFormat("de-CH", { timeZone: "UTC", ...opts }).format(d);
+export function fmtDate(d: Date, opts: Intl.DateTimeFormatOptions = { day: "numeric", month: "short", year: "numeric" }, intl = "de-CH") {
+  return new Intl.DateTimeFormat(intl, { timeZone: "UTC", ...opts }).format(d);
 }
 
-export function fmtRange(a: Date, b: Date) {
-  const same = a.getTime() === b.getTime();
-  if (same) return fmtDate(a, { weekday: "short", day: "numeric", month: "short", year: "numeric" });
-  const sameMonth = a.getUTCMonth() === b.getUTCMonth() && a.getUTCFullYear() === b.getUTCFullYear();
-  return sameMonth
-    ? `${a.getUTCDate()}.–${fmtDate(b)}`
-    : `${fmtDate(a, { day: "numeric", month: "short" })} – ${fmtDate(b)}`;
+export function fmtRange(a: Date, b: Date, intl = "de-CH") {
+  if (a.getTime() === b.getTime()) return fmtDate(a, { weekday: "short", day: "numeric", month: "short", year: "numeric" }, intl);
+  try {
+    return new Intl.DateTimeFormat(intl, { timeZone: "UTC", day: "numeric", month: "short", year: "numeric" }).formatRange(a, b);
+  } catch {
+    return `${fmtDate(a, undefined, intl)} – ${fmtDate(b, undefined, intl)}`;
+  }
 }
 
-export function fmtDateTime(d: Date) {
-  return new Intl.DateTimeFormat("de-CH", {
+export function fmtDateTime(d: Date, intl = "de-CH") {
+  return new Intl.DateTimeFormat(intl, {
     timeZone: TZ, day: "2-digit", month: "2-digit", year: "numeric", hour: "2-digit", minute: "2-digit",
   }).format(d);
 }
 
-export function fmtTime(d: Date) {
-  return new Intl.DateTimeFormat("de-CH", { timeZone: TZ, hour: "2-digit", minute: "2-digit" }).format(d);
+export function fmtTime(d: Date, intl = "de-CH", seconds = false) {
+  return new Intl.DateTimeFormat(intl, { timeZone: TZ, hour: "2-digit", minute: "2-digit", ...(seconds ? { second: "2-digit" } : {}) }).format(d);
 }
 
 export function fmtSize(n: number) {
@@ -55,11 +55,4 @@ export function slugify(s: string) {
   return s.normalize("NFKD").replace(/[̀-ͯ]/g, "").toLowerCase().replace(/[^a-z0-9]+/g, "-").replace(/^-|-$/g, "").slice(0, 60);
 }
 
-export const DOC_TYPES = {
-  NOR: "Ausschreibung (NoR)",
-  SI: "Segelanweisungen (SI)",
-  AMENDMENT: "Änderung",
-  NOTICE: "Mitteilung",
-  PROTEST: "Protest / Entscheid",
-  OTHER: "Weiteres",
-} as const;
+export const DOC_TYPE_KEYS = ["NOR", "SI", "AMENDMENT", "NOTICE", "PROTEST", "OTHER"] as const;

@@ -1,4 +1,4 @@
-// Pilot data: Zurich-region regattas listed on manage2sail.com for 2026 (title, dates, place, club, status, link).
+// Pilot data: Swiss regattas listed on manage2sail.com for 2026 (title, dates, place, club, status, link).
 // Run: npm run seed   (safe to re-run; existing events are matched by their manage2sail link)
 import { PrismaClient } from "@prisma/client";
 import { readFileSync } from "fs";
@@ -13,7 +13,7 @@ const SHORT = {
 };
 const slugify = (s) => s.normalize("NFKD").replace(/[̀-ͯ]/g, "").toLowerCase().replace(/[^a-z0-9]+/g, "-").replace(/^-|-$/g, "").slice(0, 60);
 
-const events = JSON.parse(readFileSync(new URL("./data/zurich-2026.json", import.meta.url), "utf8"));
+const events = JSON.parse(readFileSync(new URL("./data/switzerland-2026.json", import.meta.url), "utf8"));
 let created = 0;
 for (const e of events) {
   const club = await db.club.upsert({ where: { name: e.club }, create: { name: e.club, shortName: SHORT[e.club] ?? null }, update: {} });

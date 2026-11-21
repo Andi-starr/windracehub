@@ -2,7 +2,8 @@
 import { useRef, useState } from "react";
 import { useRouter } from "next/navigation";
 import { addDocument } from "@/app/manage/actions";
-import { DOC_TYPES } from "@/lib/format";
+import { DOC_TYPE_KEYS } from "@/lib/format";
+import { useT } from "@/i18n/client";
 import { uploadFile } from "./upload";
 
 type Item = { file: File; type: string; title: string; state: "ready" | "busy" | "done" | "error"; msg?: string };
@@ -22,6 +23,7 @@ export function DocUploader({ eventId }: { eventId: string }) {
   const [over, setOver] = useState(false);
   const input = useRef<HTMLInputElement>(null);
   const router = useRouter();
+  const { t } = useT();
 
   const add = (files: FileList | null) => {
     if (!files) return;
@@ -42,7 +44,7 @@ export function DocUploader({ eventId }: { eventId: string }) {
         await addDocument(eventId, { key, fileName: it.file.name, size: it.file.size, type: it.type, title: it.title });
         patch(i, { state: "done" });
       } catch (e) {
-        patch(i, { state: "error", msg: e instanceof Error ? e.message : "Fehler" });
+        patch(i, { state: "error", msg: e instanceof Error ? e.message : t.common.error });
       }
     }
     router.refresh();
@@ -61,8 +63,8 @@ export function DocUploader({ eventId }: { eventId: string }) {
         className={`flex w-full flex-col items-center justify-center rounded-xl border-2 border-dashed px-4 py-8 text-center transition ${over ? "border-sea-500 bg-sea-50" : "border-slate-300 bg-slate-50 hover:border-sea-500"}`}
       >
         <span className="text-3xl" aria-hidden>📄</span>
-        <span className="mt-2 font-semibold text-sea-700">PDF hierher ziehen oder klicken</span>
-        <span className="text-xs text-slate-500">Ausschreibung, Segelanweisungen, Änderungen, Mitteilungen, Protestentscheide</span>
+        <span className="mt-2 font-semibold text-sea-700">{t.upload.drop}</span>
+        <span className="text-xs text-slate-500">{t.upload.dropHint}</span>
       </button>
       <input ref={input} type="file" multiple accept=".pdf,application/pdf,image/*" className="hidden" onChange={(e) => { add(e.target.files); e.target.value = ""; }} />
 
@@ -70,15 +72,15 @@ export function DocUploader({ eventId }: { eventId: string }) {
         <ul className="space-y-2">
           {items.map((it, i) => (
             <li key={i} className="flex flex-col gap-2 rounded-lg border border-slate-200 bg-white p-3 sm:flex-row sm:items-center">
-              <input className="input flex-1" value={it.title} disabled={it.state === "done"} onChange={(e) => patch(i, { title: e.target.value })} aria-label="Titel" />
-              <select className="input sm:w-56" value={it.type} disabled={it.state === "done"} onChange={(e) => patch(i, { type: e.target.value })} aria-label="Art">
-                {Object.entries(DOC_TYPES).map(([k, v]) => <option key={k} value={k}>{v}</option>)}
+              <input className="input flex-1" value={it.title} disabled={it.state === "done"} onChange={(e) => patch(i, { title: e.target.value })} aria-label={t.upload.resTitle} />
+              <select className="input sm:w-56" value={it.type} disabled={it.state === "done"} onChange={(e) => patch(i, { type: e.target.value })} aria-label={t.upload.resStatus}>
+                {DOC_TYPE_KEYS.map((k) => <option key={k} value={k}>{t.docTypes[k]}</option>)}
               </select>
               <span className="w-28 text-xs">
-                {it.state === "busy" && <span className="text-slate-500">Lade hoch…</span>}
-                {it.state === "done" && <span className="font-semibold text-emerald-700">✓ Veröffentlicht</span>}
+                {it.state === "busy" && <span className="text-slate-500">{t.upload.uploading}</span>}
+                {it.state === "done" && <span className="font-semibold text-emerald-700">{t.upload.done}</span>}
                 {it.state === "error" && <span className="text-red-700">{it.msg}</span>}
-                {it.state === "ready" && <button type="button" className="btn-danger" onClick={() => setItems((c) => c.filter((_, j) => j !== i))}>Entfernen</button>}
+                {it.state === "ready" && <button type="button" className="btn-danger" onClick={() => setItems((c) => c.filter((_, j) => j !== i))}>{t.common.remove}</button>}
               </span>
             </li>
           ))}
@@ -86,7 +88,7 @@ export function DocUploader({ eventId }: { eventId: string }) {
       )}
       {pending > 0 && (
         <button className="btn" onClick={publish} disabled={items.some((i) => i.state === "busy")}>
-          {pending === 1 ? "Jetzt veröffentlichen" : `${pending} Dokumente veröffentlichen`}
+          {pending === 1 ? t.upload.publishOne : `${pending} · ${t.upload.publishN}`}
         </button>
       )}
     </div>

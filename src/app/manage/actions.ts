@@ -4,10 +4,11 @@ import { redirect } from "next/navigation";
 import { z } from "zod";
 import type { DocType, Role } from "@prisma/client";
 import { db } from "@/lib/db";
-import { newToken, requireEventRole, requireUser } from "@/lib/auth";
+import { newToken, requireEventRole, requireRole } from "@/lib/auth";
 import { deleteFile, makeKey, signedUploadUrl } from "@/lib/storage";
 import { parseDay, parseZurichLocal, slugify } from "@/lib/format";
 import { parseDelimited } from "@/lib/results";
+import { getT } from "@/i18n";
 
 async function touch(eventId: string) {
   const e = await db.event.findUnique({ where: { id: eventId }, select: { slug: true } });
@@ -35,10 +36,10 @@ async function clubIdFor(name: string) {
 }
 
 const EventInput = z.object({
-  title: z.string().trim().min(3, "Titel fehlt"),
+  title: z.string().trim().min(3, "errTitle"),
   club: z.string().trim().default(""),
   venue: z.string().trim().default(""),
-  startDate: z.string().regex(/^\d{4}-\d{2}-\d{2}$/, "Startdatum fehlt"),
+  startDate: z.string().regex(/^\d{4}-\d{2}-\d{2}$/, "errStart"),
   endDate: z.string().regex(/^\d{4}-\d{2}-\d{2}$/).or(z.literal("")).default(""),
   classes: z.string().default(""),
   entryUrl: z.string().trim().default(""),
@@ -47,13 +48,17 @@ const EventInput = z.object({
   description: z.string().trim().default(""),
 });
 
-function readEvent(fd: FormData) {
+async function readEvent(fd: FormData) {
+  const { t } = await getT();
   const r = EventInput.safeParse(Object.fromEntries(fd));
-  if (!r.success) return { error: r.error.issues[0].message } as const;
+  if (!r.success) {
+    const m = r.error.issues[0].message;
+    return { error: m === "errTitle" || m === "errStart" ? t.form[m] : m } as const;
+  }
   const v = r.data;
   const start = parseDay(v.startDate);
   const end = v.endDate ? parseDay(v.endDate) : start;
-  if (end < start) return { error: "Enddatum liegt vor dem Startdatum." } as const;
+  if (end < start) return { error: t.form.errEnd } as const;
   const classes = v.classes.split(/[,\n]/).map((s) => s.trim()).filter(Boolean);
   return { v, start, end, classes } as const;
 }
@@ -61,8 +66,8 @@ function readEvent(fd: FormData) {
 export type ActionState = { error?: string; ok?: string } | undefined;
 
 export async function createEvent(_: ActionState, fd: FormData): Promise<ActionState> {
-  const user = await requireUser();
-  const p = readEvent(fd);
+  const user = await requireRole("ADMIN", "HOST");
+  const p = await readEvent(fd);
   if ("error" in p) return { error: p.error };
   const { v, start, end, classes } = p;
   const copyFrom = String(fd.get("copyFrom") ?? "");
@@ -91,7 +96,8 @@ export async function createEvent(_: ActionState, fd: FormData): Promise<ActionS
 
 export async function updateEvent(eventId: string, _: ActionState, fd: FormData): Promise<ActionState> {
   await requireEventRole(eventId, "HOST");
-  const p = readEvent(fd);
+  const { t } = await getT();
+  const p = await readEvent(fd);
   if ("error" in p) return { error: p.error };
   const { v, start, end, classes } = p;
   const existing = await db.eventClass.findMany({ where: { eventId } });
@@ -114,7 +120,7 @@ export async function updateEvent(eventId: string, _: ActionState, fd: FormData)
     }),
   ]);
   await touch(eventId);
-  return { ok: "Gespeichert." };
+  return { ok: t.common.saved };
 }
 
 export async function setStatus(eventId: string, status: "DRAFT" | "PUBLISHED" | "CANCELLED") {
@@ -226,30 +232,33 @@ export async function deleteScheduleItem(eventId: string, id: string) {
 /** Paste from Excel: Klasse | Segelnr | Boot | Steuermann | Club. Replaces the whole list. */
 export async function replaceEntries(eventId: string, _: ActionState, fd: FormData): Promise<ActionState> {
   await requireEventRole(eventId);
+  const { t } = await getT();
   const text = String(fd.get("entries") ?? "");
   const classes = await db.eventClass.findMany({ where: { eventId } });
-  const t = text.trim() ? parseDelimited(text) : { headers: [], rows: [] };
-  if (!t) return { error: "Konnte die Liste nicht lesen." };
-  let rows = [t.headers, ...t.rows].filter((r) => r.some(Boolean));
+  const tbl = text.trim() ? parseDelimited(text) : { headers: [], rows: [] };
+  if (!tbl) return { error: t.manage.entriesUnreadable };
+  let rows = [tbl.headers, ...tbl.rows].filter((r) => r.some(Boolean));
   if (/klasse|class/i.test(rows[0]?.[0] ?? "")) rows = rows.slice(1);
   const byName = (n: string) => classes.find((c) => c.name.toLowerCase() === n.toLowerCase())?.id ?? null;
   await db.$transaction([
-    db.entry.deleteMany({ where: { eventId } }),
+    db.entry.deleteMany({ where: { eventId, userId: null } }),
     db.entry.createMany({
       data: rows.map((r) => ({
         eventId, classId: byName(r[0] ?? ""), sailNumber: r[1] || null, boatName: r[2] || null, skipper: r[3] || null, club: r[4] || null,
+        handicap: r[5] && !isNaN(Number(r[5].replace(",", "."))) ? Number(r[5].replace(",", ".")) : null,
       })),
     }),
   ]);
   await touch(eventId);
-  return { ok: `${rows.length} Meldungen gespeichert.` };
+  return { ok: `${rows.length} ${t.manage.entriesSaved}` };
 }
 
 export async function inviteMember(eventId: string, _: ActionState, fd: FormData): Promise<ActionState> {
   await requireEventRole(eventId, "HOST");
+  const { t } = await getT();
   const email = String(fd.get("email") ?? "").trim().toLowerCase();
   const role = (fd.get("role") === "HOST" ? "HOST" : "OFFICIAL") as Role;
-  if (!/^\S+@\S+\.\S+$/.test(email)) return { error: "Bitte gültige E-Mail angeben." };
+  if (!/^\S+@\S+\.\S+$/.test(email)) return { error: t.auth.badEmail };
   const token = newToken();
   await db.invite.create({ data: { token, eventId, email, role } });
   await touch(eventId);
@@ -266,5 +275,21 @@ export async function removeMember(eventId: string, userId: string) {
 export async function revokeInvite(eventId: string, token: string) {
   await requireEventRole(eventId, "HOST");
   await db.invite.deleteMany({ where: { eventId, token } });
+  await touch(eventId);
+}
+
+export async function setEntryOptions(eventId: string, fd: FormData) {
+  await requireEventRole(eventId, "HOST");
+  const discards = String(fd.get("discards") ?? "").replace(/\s/g, "");
+  await db.event.update({
+    where: { id: eventId },
+    data: { entriesOpen: fd.get("entriesOpen") === "on", discards: /^(\d+:\d+)(,\d+:\d+)*$/.test(discards) ? discards : null },
+  });
+  await touch(eventId);
+}
+
+export async function deleteEntry(eventId: string, id: string) {
+  await requireEventRole(eventId);
+  await db.entry.deleteMany({ where: { id, eventId } });
   await touch(eventId);
 }
