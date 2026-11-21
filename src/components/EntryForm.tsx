@@ -5,7 +5,7 @@ import { useT } from "@/i18n/client";
 
 type Boat = { id: string; className: string; sailNumber: string; boatName: string | null; crew: string | null };
 
-export function EntryForm({ eventId, classes, boats, defaultSkipper }: { eventId: string; classes: { id: string; name: string }[]; boats: Boat[]; defaultSkipper: string }) {
+export function EntryForm({ eventId, classes, boats, crew, defaultSkipper }: { eventId: string; classes: { id: string; name: string }[]; boats: Boat[]; crew: { id: string; name: string }[]; defaultSkipper: string }) {
   const { t } = useT();
   const [state, run, pending] = useActionState(enterEvent.bind(null, eventId), undefined);
   const first = boats.find((b) => classes.some((c) => c.name === b.className)) ?? boats[0];
@@ -36,7 +36,22 @@ export function EntryForm({ eventId, classes, boats, defaultSkipper }: { eventId
         <div><label className="label" htmlFor="sailNumber">{t.entry.sailNo}</label><input id="sailNumber" name="sailNumber" required className="input" defaultValue={boat?.sailNumber} placeholder="SUI 1234" /></div>
         <div><label className="label" htmlFor="boatName">{t.entry.boatName}</label><input id="boatName" name="boatName" className="input" defaultValue={boat?.boatName ?? ""} /></div>
         <div><label className="label" htmlFor="skipper">{t.entry.skipper}</label><input id="skipper" name="skipper" required className="input" defaultValue={defaultSkipper} /></div>
-        <div><label className="label" htmlFor="crew">{t.entry.crew}</label><input id="crew" name="crew" className="input" defaultValue={boat?.crew ?? ""} placeholder={t.entry.crewPh} /></div>
+        <div className="sm:col-span-2">
+          {crew.length > 0 && (
+            <fieldset className="mb-2">
+              <legend className="label">{t.crew.pick}</legend>
+              <div className="flex flex-wrap gap-2">
+                {crew.map((c) => (
+                  <label key={c.id} className="flex cursor-pointer items-center gap-2 rounded-full border border-slate-300 bg-white px-3 py-1.5 text-sm has-[:checked]:border-sea-500 has-[:checked]:bg-sea-50">
+                    <input type="checkbox" name="crewPick" value={c.id} defaultChecked={!!boat?.crew?.split(",").map((s) => s.trim()).includes(c.name)} /> {c.name}
+                  </label>
+                ))}
+              </div>
+            </fieldset>
+          )}
+          <label className="label" htmlFor="crew">{crew.length > 0 ? t.crew.others : t.entry.crew}</label>
+          <input id="crew" name="crew" className="input" defaultValue={crew.length > 0 ? "" : boat?.crew ?? ""} placeholder={t.entry.crewPh} />
+        </div>
         <div><label className="label" htmlFor="eclub">{t.entry.club}</label><input id="eclub" name="club" className="input" /></div>
       </div>
       <label className="flex items-center gap-2 text-sm"><input type="checkbox" name="saveBoat" defaultChecked={!boat} /> {t.entry.saveBoat}</label>

@@ -18,7 +18,14 @@ export async function enterEvent(eventId: string, _: EntryState, fd: FormData): 
   if (!sailNumber) return { error: t.entry.errSail };
   if (!skipper) return { error: t.entry.errSkipper };
   if (await db.entry.findFirst({ where: { eventId, userId: user.id } })) return { ok: true };
-  const data = { sailNumber, boatName: get("boatName") || null, skipper, crew: get("crew") || null, club: get("club") || null };
+  // crew = ticked saved crew members + typed names; typed names are saved to "My crew" for next time
+  const saved = await db.crewMember.findMany({ where: { userId: user.id } });
+  const picked = fd.getAll("crewPick").map(String).map((id) => saved.find((c) => c.id === id)?.name).filter((n): n is string => !!n);
+  const typed = get("crew").split(",").map((s) => s.trim()).filter(Boolean);
+  const crew = [...new Set([...picked, ...typed])];
+  const fresh = typed.filter((n) => !saved.some((c) => c.name.toLowerCase() === n.toLowerCase()));
+  if (fresh.length) await db.crewMember.createMany({ data: fresh.map((name) => ({ userId: user.id, name })) });
+  const data = { sailNumber, boatName: get("boatName") || null, skipper, crew: crew.join(", ") || null, club: get("club") || null };
   await db.entry.create({ data: { eventId, classId, userId: user.id, ...data } });
   if (fd.get("saveBoat")) {
     const cls = e.classes.find((c) => c.id === classId)?.name ?? "";
@@ -43,5 +50,19 @@ export async function withdrawEntry(entryId: string) {
 export async function deleteBoat(boatId: string) {
   const user = await requireUser();
   await db.boat.deleteMany({ where: { id: boatId, userId: user.id } });
+  revalidatePath("/me");
+}
+
+export async function addCrew(fd: FormData) {
+  const user = await requireUser();
+  const name = String(fd.get("name") ?? "").trim();
+  const club = String(fd.get("club") ?? "").trim();
+  if (name) await db.crewMember.create({ data: { userId: user.id, name, club: club || null } });
+  revalidatePath("/me");
+}
+
+export async function deleteCrew(id: string) {
+  const user = await requireUser();
+  await db.crewMember.deleteMany({ where: { id, userId: user.id } });
   revalidatePath("/me");
 }

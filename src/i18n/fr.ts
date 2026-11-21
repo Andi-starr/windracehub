@@ -1,7 +1,7 @@
 import type { Dict } from "./de";
 const fr: Dict = {
   meta: { description: "Régates en Suisse : avis de course, instructions de course, communiqués, inscriptions, procédure de départ et résultats au même endroit." },
-  nav: { regattas: "Régates", myEvents: "Mes événements", myEntries: "Mes inscriptions", admin: "Admin", login: "Connexion", logout: "Déconnexion" },
+  nav: { clubs: "Clubs", regattas: "Régates", myEvents: "Mes événements", myEntries: "Mes inscriptions", admin: "Admin", login: "Connexion", logout: "Déconnexion" },
   footer: "windracehub · Régates en Suisse",
   roles: { ADMIN: "Admin", HOST: "Organisateur", PARTICIPANT: "Participant", OFFICIAL: "Comité de course" },
   status: { DRAFT: "Brouillon", PUBLISHED: "Public", CANCELLED: "Annulée", draftHidden: "Brouillon, non public" },
@@ -12,6 +12,7 @@ const fr: Dict = {
     loading: "…", error: "Erreur", class: "Série", club: "Club", total: "Général / autre", rows: "lignes", name: "Nom", email: "E-mail",
   },
   home: {
+    year: "Année", month: "Mois", allPeriods: "Toutes", allYears: "Toutes les années", allMonths: "Tous les mois", reset: "Réinitialiser les filtres", count: "régates", clubsTitle: "Clubs", clubsIntro: "Tous les clubs avec des régates sur windracehub.", events: "Régates", date: "Date", place: "Lieu", status: "Statut",
     title: "Régates en Suisse", subtitle: "Avis de course, instructions de course, communiqués et résultats au même endroit.",
     searchPh: "Régate, lieu ou club", allClubs: "Tous les clubs", allClasses: "Toutes les séries", period: "Période",
     upcoming: "À venir", past: "Passées", noneFound: "Aucune régate trouvée.",
@@ -79,6 +80,19 @@ const fr: Dict = {
     done: "Vous êtes inscrit·e.", withdraw: "Retirer l'inscription", withdrawQ: "Vraiment retirer votre inscription ?", already: "Votre inscription",
     errSail: "N° de voile manquant.", errSkipper: "Barreur·se manquant·e.", errClass: "Veuillez choisir une série.",
     myTitle: "Mes inscriptions", myEmpty: "Aucune inscription pour l'instant. Cherchez une régate « Inscriptions ouvertes ».", boats: "Mes bateaux", noBoats: "Aucun bateau enregistré.",
+  },
+  crew: { title: "Mon équipage", intro: "Enregistrez votre équipage une fois, ensuite une coche suffit pour l'inscription.", add: "Ajouter un équipier", none: "Aucun équipier enregistré.", pick: "Choisir l'équipage", others: "Autres équipiers" },
+  accounts: {
+    hosts: "Organisateurs", participants: "Participants", admins: "Admins", createHost: "Créer un accès organisateur",
+    createHostIntro: "Crée un compte avec le rôle organisateur. La personne définit son mot de passe via le lien (valable 14 jours).",
+    created: "Accès créé. Envoyez ce lien à la personne :", emailed: "Le lien a aussi été envoyé par e-mail.",
+    exists: "Cet e-mail a déjà un compte. Son rôle est maintenant organisateur.", deleteUser: "Supprimer le compte",
+    deleteQ: "Supprimer définitivement ce compte ? Les inscriptions dans les résultats passés sont conservées sans lien vers le compte.",
+    resetLink: "Lien mot de passe", lastActive: "dernière activité", autoDelete: "Les comptes participants inutilisés pendant 1 an sont supprimés automatiquement (avis par e-mail 1 semaine et 1 jour avant).",
+    mailOff: "L'envoi d'e-mails n'est pas encore configuré : envoyez les liens vous-même. La suppression automatique ne s'active que lorsque les e-mails peuvent être envoyés.",
+    setPwTitle: "Définir le mot de passe", setPwSave: "Enregistrer le mot de passe", tokenInvalid: "Ce lien n'est pas valable ou a expiré.",
+    mailWarnSubject: "Votre compte windracehub va être supprimé", mailWarnBody: "Bonjour {name}\n\nvotre compte windracehub n'a pas été utilisé depuis un an et sera supprimé automatiquement le {date}.\nPour le conserver, connectez-vous simplement une fois d'ici là : {url}\n\nwindracehub",
+    mailHostSubject: "Votre accès organisateur windracehub", mailHostBody: "Bonjour {name}\n\nun accès organisateur a été créé pour vous sur windracehub. Définissez votre mot de passe ici (valable 14 jours) :\n{url}\n\nwindracehub",
   },
   admin: { title: "Utilisateurs & rôles", intro: "Seuls les organisateurs et les admins peuvent créer des régates. Chaque nouvel utilisateur est d'abord participant.", role: "Rôle", since: "depuis", changed: "Rôle modifié." },
   race: {

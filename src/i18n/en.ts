@@ -1,7 +1,7 @@
 import type { Dict } from "./de";
 const en: Dict = {
   meta: { description: "Sailing regattas in Switzerland: notices of race, sailing instructions, notices, entries, start sequence and results in one place." },
-  nav: { regattas: "Regattas", myEvents: "My events", myEntries: "My entries", admin: "Admin", login: "Login", logout: "Log out" },
+  nav: { clubs: "Clubs", regattas: "Regattas", myEvents: "My events", myEntries: "My entries", admin: "Admin", login: "Login", logout: "Log out" },
   footer: "windracehub · Regattas in Switzerland",
   roles: { ADMIN: "Admin", HOST: "Host", PARTICIPANT: "Participant", OFFICIAL: "Race committee" },
   status: { DRAFT: "Draft", PUBLISHED: "Public", CANCELLED: "Cancelled", draftHidden: "Draft, not public" },
@@ -12,6 +12,7 @@ const en: Dict = {
     loading: "…", error: "Error", class: "Class", club: "Club", total: "Overall / other", rows: "rows", name: "Name", email: "Email",
   },
   home: {
+    year: "Year", month: "Month", allPeriods: "All", allYears: "All years", allMonths: "All months", reset: "Clear filters", count: "regattas", clubsTitle: "Clubs", clubsIntro: "All clubs with regattas on windracehub.", events: "Regattas", date: "Date", place: "Venue", status: "Status",
     title: "Regattas in Switzerland", subtitle: "Notices of race, sailing instructions, notices and results in one place.",
     searchPh: "Regatta, venue or club", allClubs: "All clubs", allClasses: "All classes", period: "Period",
     upcoming: "Upcoming", past: "Past", noneFound: "No regattas found.",
@@ -79,6 +80,19 @@ const en: Dict = {
     done: "You are entered.", withdraw: "Withdraw entry", withdrawQ: "Really withdraw your entry?", already: "Your entry",
     errSail: "Sail number missing.", errSkipper: "Helm missing.", errClass: "Please choose a class.",
     myTitle: "My entries", myEmpty: "No entries yet. Find a regatta marked «Entries open».", boats: "My boats", noBoats: "No boats saved yet.",
+  },
+  crew: { title: "My crew", intro: "Save your crew once, then a tick is all it takes when entering.", add: "Add crew member", none: "No crew saved yet.", pick: "Choose crew", others: "Other crew" },
+  accounts: {
+    hosts: "Hosts", participants: "Participants", admins: "Admins", createHost: "Create host login",
+    createHostIntro: "Creates an account with the host role. The person sets their password via the link (valid 14 days).",
+    created: "Login created. Send this link to the person:", emailed: "The link was also sent by email.",
+    exists: "This email already has an account. Its role was set to host.", deleteUser: "Delete account",
+    deleteQ: "Permanently delete this account? Entries in past results are kept without the account link.",
+    resetLink: "Password link", lastActive: "last active", autoDelete: "Participant accounts unused for 1 year are deleted automatically (email notice 1 week and 1 day before).",
+    mailOff: "Email sending is not set up yet: please send links yourself. Automatic deletion only runs once emails can be sent.",
+    setPwTitle: "Set password", setPwSave: "Save password", tokenInvalid: "This link is invalid or has expired.",
+    mailWarnSubject: "Your windracehub account will be deleted", mailWarnBody: "Hello {name}\n\nyour windracehub account has not been used for a year and will be deleted automatically on {date}.\nTo keep it, just log in once before then: {url}\n\nwindracehub",
+    mailHostSubject: "Your host login for windracehub", mailHostBody: "Hello {name}\n\na host login was created for you on windracehub. Set your password here (valid 14 days):\n{url}\n\nwindracehub",
   },
   admin: { title: "Users & roles", intro: "Only hosts and admins can create regattas. Every new user starts as a participant.", role: "Role", since: "since", changed: "Role changed." },
   race: {

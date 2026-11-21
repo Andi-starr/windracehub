@@ -1,6 +1,6 @@
 const de = {
   meta: { description: "Regatten in der Schweiz: Ausschreibungen, Segelanweisungen, Mitteilungen, Meldungen, Startverfahren und Resultate an einem Ort." },
-  nav: { regattas: "Regatten", myEvents: "Meine Events", myEntries: "Meine Meldungen", admin: "Admin", login: "Login", logout: "Abmelden" },
+  nav: { clubs: "Clubs", regattas: "Regatten", myEvents: "Meine Events", myEntries: "Meine Meldungen", admin: "Admin", login: "Login", logout: "Abmelden" },
   footer: "windracehub · Regatten in der Schweiz",
   roles: { ADMIN: "Admin", HOST: "Veranstalter", PARTICIPANT: "Teilnehmer", OFFICIAL: "Wettfahrtleitung" },
   status: { DRAFT: "Entwurf", PUBLISHED: "Öffentlich", CANCELLED: "Abgesagt", draftHidden: "Entwurf, nicht öffentlich" },
@@ -11,6 +11,7 @@ const de = {
     loading: "…", error: "Fehler", class: "Klasse", club: "Club", total: "Gesamt / andere", rows: "Zeilen", name: "Name", email: "E-Mail",
   },
   home: {
+    year: "Jahr", month: "Monat", allPeriods: "Alle", allYears: "Alle Jahre", allMonths: "Alle Monate", reset: "Filter zurücksetzen", count: "Regatten", clubsTitle: "Clubs", clubsIntro: "Alle Clubs mit Regatten auf windracehub.", events: "Regatten", date: "Datum", place: "Ort", status: "Status",
     title: "Regatten in der Schweiz", subtitle: "Ausschreibungen, Segelanweisungen, Mitteilungen und Resultate an einem Ort.",
     searchPh: "Regatta, Ort oder Club", allClubs: "Alle Clubs", allClasses: "Alle Klassen", period: "Zeitraum",
     upcoming: "Kommende", past: "Vergangene", noneFound: "Keine Regatten gefunden.",
@@ -78,6 +79,19 @@ const de = {
     done: "Du bist gemeldet.", withdraw: "Meldung zurückziehen", withdrawQ: "Meldung wirklich zurückziehen?", already: "Deine Meldung",
     errSail: "Segelnummer fehlt.", errSkipper: "Steuermann/-frau fehlt.", errClass: "Bitte Klasse wählen.",
     myTitle: "Meine Meldungen", myEmpty: "Du hast noch keine Meldungen. Such dir eine Regatta mit «Meldung offen».", boats: "Meine Boote", noBoats: "Noch keine Boote gespeichert.",
+  },
+  crew: { title: "Meine Crew", intro: "Speichere deine Crew einmal, dann reicht beim Melden ein Häkchen.", add: "Crewmitglied hinzufügen", none: "Noch keine Crew gespeichert.", pick: "Crew auswählen", others: "Weitere Crew" },
+  accounts: {
+    hosts: "Veranstalter", participants: "Teilnehmer", admins: "Admins", createHost: "Veranstalter-Login erstellen",
+    createHostIntro: "Erstellt ein Konto mit der Rolle Veranstalter. Die Person setzt ihr Passwort über den Link (14 Tage gültig).",
+    created: "Login erstellt. Schick diesen Link an die Person:", emailed: "Der Link wurde zusätzlich per E-Mail verschickt.",
+    exists: "Diese E-Mail hat schon ein Konto. Rolle wurde auf Veranstalter gesetzt.", deleteUser: "Konto löschen",
+    deleteQ: "Konto endgültig löschen? Meldungen in vergangenen Resultaten bleiben ohne Kontoverknüpfung erhalten.",
+    resetLink: "Passwort-Link", lastActive: "zuletzt aktiv", autoDelete: "Teilnehmerkonten, die 1 Jahr nicht benutzt werden, werden automatisch gelöscht (Hinweis per E-Mail 1 Woche und 1 Tag vorher).",
+    mailOff: "E-Mail-Versand ist noch nicht eingerichtet: Links bitte selbst verschicken. Automatisches Löschen ist erst aktiv, wenn E-Mails verschickt werden können.",
+    setPwTitle: "Passwort festlegen", setPwSave: "Passwort speichern", tokenInvalid: "Dieser Link ist ungültig oder abgelaufen.",
+    mailWarnSubject: "Dein windracehub-Konto wird gelöscht", mailWarnBody: "Hallo {name}\n\ndein windracehub-Konto wurde seit einem Jahr nicht benutzt und wird am {date} automatisch gelöscht.\nWenn du es behalten möchtest, logge dich einfach vorher einmal ein: {url}\n\nwindracehub",
+    mailHostSubject: "Dein Veranstalter-Login für windracehub", mailHostBody: "Hallo {name}\n\nfür dich wurde ein Veranstalter-Login auf windracehub erstellt. Lege hier dein Passwort fest (14 Tage gültig):\n{url}\n\nwindracehub",
   },
   admin: { title: "Benutzer & Rollen", intro: "Nur Veranstalter und Admins können Regatten erstellen. Jeder neue Benutzer ist zuerst Teilnehmer.", role: "Rolle", since: "seit", changed: "Rolle geändert." },
   race: {

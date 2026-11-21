@@ -17,6 +17,7 @@ export async function verifyPassword(pw: string, hash: string) {
 }
 
 export async function createSession(userId: string) {
+  await db.user.update({ where: { id: userId }, data: { lastActiveAt: new Date(), warned7At: null, warned1At: null } });
   const id = randomBytes(32).toString("hex");
   const expiresAt = new Date(Date.now() + DAYS * 864e5);
   await db.session.create({ data: { id, userId, expiresAt } });
@@ -41,6 +42,10 @@ export async function currentUser() {
   if (!id) return null;
   const s = await db.session.findUnique({ where: { id }, include: { user: true } });
   if (!s || s.expiresAt < new Date()) return null;
+  // track activity (at most once a day) for the 1-year inactivity cleanup
+  if (Date.now() - s.user.lastActiveAt.getTime() > 864e5) {
+    await db.user.update({ where: { id: s.user.id }, data: { lastActiveAt: new Date(), warned7At: null, warned1At: null } });
+  }
   return s.user;
 }
 

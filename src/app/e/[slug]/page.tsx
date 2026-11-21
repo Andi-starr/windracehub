@@ -52,7 +52,9 @@ export default async function EventPage({ params }: { params: P }) {
   }
   const olderResults = e.results.filter((r) => !Array.from(latest.values()).includes(r));
   const myEntry = user ? e.entries.find((x) => x.userId === user.id) : undefined;
-  const boats = user && !myEntry ? await db.boat.findMany({ where: { userId: user.id } }) : [];
+  const [boats, crew] = user && !myEntry
+    ? await Promise.all([db.boat.findMany({ where: { userId: user.id } }), db.crewMember.findMany({ where: { userId: user.id }, orderBy: { name: "asc" } })])
+    : [[], []];
   const canEnter = e.entriesOpen && e.status === "PUBLISHED";
   const liveRaces = e.races.filter((r) => r.status === "SEQUENCE" || r.status === "RUNNING");
 
@@ -127,7 +129,7 @@ export default async function EventPage({ params }: { params: P }) {
               <ConfirmButton action={withdrawEntry.bind(null, myEntry.id)} label={t.entry.withdraw} question={t.entry.withdrawQ} />
             </div>
           ) : (
-            <EntryForm eventId={e.id} classes={e.classes.map((c) => ({ id: c.id, name: c.name }))} boats={boats} defaultSkipper={user.name} />
+            <EntryForm eventId={e.id} classes={e.classes.map((c) => ({ id: c.id, name: c.name }))} boats={boats} crew={crew.map((c) => ({ id: c.id, name: c.name }))} defaultSkipper={user.name} />
           )}
         </section>
       )}

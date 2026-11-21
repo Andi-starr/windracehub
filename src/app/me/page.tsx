@@ -4,7 +4,7 @@ import { requireUser } from "@/lib/auth";
 import { getT } from "@/i18n";
 import { fmtRange } from "@/lib/format";
 import { ConfirmButton } from "@/components/ActionForms";
-import { deleteBoat, withdrawEntry } from "../e/actions";
+import { addCrew, deleteBoat, deleteCrew, withdrawEntry } from "../e/actions";
 
 export const dynamic = "force-dynamic";
 export const metadata = { title: "My entries" };
@@ -12,9 +12,10 @@ export const metadata = { title: "My entries" };
 export default async function MePage() {
   const user = await requireUser();
   const { t, intl } = await getT();
-  const [entries, boats] = await Promise.all([
+  const [entries, boats, crew] = await Promise.all([
     db.entry.findMany({ where: { userId: user.id }, include: { event: true, eventClass: true }, orderBy: { event: { startDate: "desc" } } }),
     db.boat.findMany({ where: { userId: user.id } }),
+    db.crewMember.findMany({ where: { userId: user.id }, orderBy: { name: "asc" } }),
   ]);
   return (
     <div className="space-y-6">
@@ -37,6 +38,25 @@ export default async function MePage() {
             ))}
           </ul>
         )}
+      </section>
+      <section className="card">
+        <h2 className="h2">{t.crew.title}</h2>
+        <p className="mb-3 text-sm text-slate-600">{t.crew.intro}</p>
+        {crew.length === 0 ? <p className="mb-3 text-sm text-slate-500">{t.crew.none}</p> : (
+          <ul className="mb-3 flex flex-wrap gap-2 text-sm">
+            {crew.map((c) => (
+              <li key={c.id} className="flex items-center gap-1 rounded-full bg-sea-50 py-1 pl-3 pr-1">
+                {c.name}{c.club ? <span className="text-slate-500"> · {c.club}</span> : null}
+                <form action={deleteCrew.bind(null, c.id)}><button className="rounded-full px-2 text-slate-500 hover:bg-red-50 hover:text-red-700" aria-label={t.common.remove}>×</button></form>
+              </li>
+            ))}
+          </ul>
+        )}
+        <form action={addCrew} className="flex flex-col gap-2 sm:flex-row">
+          <input name="name" required placeholder={t.common.name} className="input flex-1" />
+          <input name="club" placeholder={t.common.club} className="input sm:w-48" />
+          <button className="btn">{t.crew.add}</button>
+        </form>
       </section>
       <section className="card">
         <h2 className="h2">{t.entry.boats}</h2>

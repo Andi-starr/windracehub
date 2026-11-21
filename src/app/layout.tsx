@@ -30,6 +30,7 @@ export default async function RootLayout({ children }: { children: React.ReactNo
               </Link>
               <nav className="flex flex-wrap items-center gap-x-4 gap-y-2 text-sm">
                 <Link href="/" className="hover:underline">{t.nav.regattas}</Link>
+                <Link href="/clubs" className="hover:underline">{t.nav.clubs}</Link>
                 {user ? (
                   <>
                     <Link href="/me" className="hover:underline">{t.nav.myEntries}</Link>

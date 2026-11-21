@@ -16,6 +16,11 @@ model User {
   role         UserRole    @default(PARTICIPANT)
   locale       String      @default("de")
   createdAt    DateTime    @default(now())
+  lastActiveAt DateTime    @default(now())
+  warned7At    DateTime?
+  warned1At    DateTime?
+  crew         CrewMember[]
+  pwTokens     PasswordToken[]
   sessions     Session[]
   roles        EventRole[]
   boats        Boat[]
@@ -229,4 +234,21 @@ model Invite {
   role       Role
   createdAt  DateTime  @default(now())
   acceptedAt DateTime?
+}
+
+/// Saved crew members of a participant, ticked when entering an event.
+model CrewMember {
+  id     String  @id @default(cuid())
+  userId String
+  user   User    @relation(fields: [userId], references: [id], onDelete: Cascade)
+  name   String
+  club   String?
+}
+
+/// One-time link to set a password (admin-created hosts, password reset).
+model PasswordToken {
+  token     String   @id
+  userId    String
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  expiresAt DateTime
 }

@@ -3,6 +3,7 @@ import { redirect } from "next/navigation";
 import { db } from "@/lib/db";
 import { createSession, hashPassword, verifyPassword } from "@/lib/auth";
 import { getT } from "@/i18n";
+import { cookies } from "next/headers";
 
 export type FormState = { error?: string } | undefined;
 
@@ -34,7 +35,9 @@ export async function register(_: FormState, fd: FormData): Promise<FormState> {
   const passwordHash = await hashPassword(pw);
   const u = existing
     ? await db.user.update({ where: { id: existing.id }, data: { name, passwordHash } })
-    : await db.user.create({ data: { email, name, passwordHash, role: (await db.user.count()) === 0 ? "ADMIN" : "PARTICIPANT" } });
+    : await db.user.create({
+        data: { email, name, passwordHash, locale: (await cookies()).get("lang")?.value ?? "de", role: (await db.user.count()) === 0 ? "ADMIN" : "PARTICIPANT" },
+      });
   await createSession(u.id);
   redirect(safeNext(fd.get("next")));
 }
