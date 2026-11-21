@@ -22,7 +22,7 @@ const n = (s: string, v: number) => s.replace("{n}", String(v));
 
 function Tile({ id, title, status, warn, open, labels, children }: { id: string; title: string; status: React.ReactNode; warn?: boolean; open?: boolean; labels: [string, string]; children: React.ReactNode }) {
   return (
-    <details id={id} open={open} className="group card scroll-mt-24 p-0 open:col-span-full">
+    <details id={id} name="tiles" open={open} className="group card scroll-mt-24 p-0 open:col-span-full">
       <summary className="flex min-h-28 cursor-pointer list-none flex-col justify-between gap-3 p-5 transition-colors hover:bg-white group-open:min-h-0 [&::-webkit-details-marker]:hidden">
         <span className="flex items-start justify-between gap-3">
           <span className="text-lg font-semibold uppercase leading-tight tracking-tight">{title}</span>
