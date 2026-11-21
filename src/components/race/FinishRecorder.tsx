@@ -11,18 +11,20 @@ type F = { entryId: string; finishedAt: string | null; position: number | null; 
 const EARLY = ["OCS", "UFD", "BFD"];
 
 /** Everything recorded on this device for one race. Kept in localStorage so a reload or a dead spot loses nothing. */
+/** One tap, so "undo" can take back exactly the last thing that was done, in any mode. */
+type Act = { k: "early"; id: string; prev?: string } | { k: "lap"; id: string } | { k: "fin"; id: string };
 type Desk = {
   early: Record<string, string>; earlyDirty: boolean;
-  laps: Record<string, number[]>; lapLog: string[];
+  laps: Record<string, number[]>; log: Act[];
   fin: { id: string; at: number }[]; sent: string[];
 };
 
 function loadDesk(key: string, finishes: F[]): Desk {
-  try { const s = localStorage.getItem(key); if (s) return JSON.parse(s); } catch { /* private mode */ }
+  try { const s = localStorage.getItem(key); if (s) { const d = JSON.parse(s); return { ...d, log: d.log ?? [] }; } } catch { /* private mode */ }
   const fin = finishes.filter((f) => f.finishedAt).map((f) => ({ id: f.entryId, at: Date.parse(f.finishedAt!) })).sort((a, b) => a.at - b.at);
   return {
     early: Object.fromEntries(finishes.filter((f) => f.code && EARLY.includes(f.code)).map((f) => [f.entryId, f.code!])), earlyDirty: false,
-    laps: {}, lapLog: [], fin, sent: fin.map((f) => f.id),
+    laps: {}, log: [], fin, sent: fin.map((f) => f.id),
   };
 }
 
@@ -33,7 +35,7 @@ export function FinishRecorder({ raceId, startAt: initialStart, status: initialS
   const [pending, start] = useTransition();
   const { startAt } = useRaceBroadcast(raceId, { startAt: initialStart, status: initialStatus });
   const key = `wrh-desk-${raceId}`;
-  const [desk, setDesk] = useState<Desk>(() => ({ early: {}, earlyDirty: false, laps: {}, lapLog: [], fin: [], sent: [] }));
+  const [desk, setDesk] = useState<Desk>(() => ({ early: {}, earlyDirty: false, laps: {}, log: [], fin: [], sent: [] }));
   const loaded = useRef(false);
   useEffect(() => { setDesk(loadDesk(key, finishes)); loaded.current = true; }, [key]); // eslint-disable-line react-hooks/exhaustive-deps
   useEffect(() => { if (loaded.current) try { localStorage.setItem(key, JSON.stringify(desk)); } catch { /* full or private */ } }, [desk, key]);
@@ -70,6 +72,7 @@ export function FinishRecorder({ raceId, startAt: initialStart, status: initialS
   const [sending, setSending] = useState<"" | "early" | "fin" | "wait">("");
   const [msg, setMsg] = useState("");
 
+  const byIdEarly = new Map(entries.map((e) => [e.id, e]));
   const finished = new Set(desk.fin.map((f) => f.id));
   const coded = new Set(finishes.filter((f) => f.code && !EARLY.includes(f.code)).map((f) => f.entryId)); // DNS, DNF … set on the server
   // boats in lap order: most laps first, then who completed that lap earliest; boats without laps keep sail-number order
@@ -77,21 +80,44 @@ export function FinishRecorder({ raceId, startAt: initialStart, status: initialS
     const lastLap = (id: string) => desk.laps[id]?.[desk.laps[id].length - 1] ?? Infinity;
     return [...entries].sort((a, b) => (desk.laps[b.id]?.length ?? 0) - (desk.laps[a.id]?.length ?? 0) || lastLap(a.id) - lastLap(b.id));
   }, [entries, desk.laps]);
+  // lap mode: boats that already came by on the leader's current lap turn dark, the ones still to come stay white
+  const maxLap = Math.max(0, ...Object.values(desk.laps).map((a) => a.length));
+  const lapDone = (id: string) => maxLap > 0 && (desk.laps[id]?.length ?? 0) >= maxLap;
   const unsent = desk.fin.filter((f) => !desk.sent.includes(f.id));
 
-  const tapFinish = (id: string) => upd((d) => ({ ...d, fin: [...d.fin, { id, at: clock() }] }));
-  const tapLap = (id: string) => upd((d) => ({ ...d, laps: { ...d.laps, [id]: [...(d.laps[id] ?? []), clock()] }, lapLog: [...d.lapLog, id] }));
-  const undoLap = () => upd((d) => {
-    const id = d.lapLog[d.lapLog.length - 1]; if (!id) return d;
-    return { ...d, laps: { ...d.laps, [id]: d.laps[id].slice(0, -1) }, lapLog: d.lapLog.slice(0, -1) };
+  const tapFinish = (id: string) => upd((d) => d.fin.some((f) => f.id === id) ? d : ({ ...d, fin: [...d.fin, { id, at: clock() }], log: [...d.log, { k: "fin", id }] }));
+  const tapLap = (id: string) => upd((d) => ({ ...d, laps: { ...d.laps, [id]: [...(d.laps[id] ?? []), clock()] }, log: [...d.log, { k: "lap", id }] }));
+  /** Take back exactly the last tap (in the current mode). */
+  const undoLast = () => {
+    const last = [...desk.log].reverse().find((a) => modeOf(a) === mode);
+    if (!last) return;
+    const idx = desk.log.lastIndexOf(last);
+    if (last.k === "fin") { undoFinish(last.id); return; }
+    upd((d) => {
+      const log = d.log.filter((_, i) => i !== idx);
+      if (last.k === "lap") return { ...d, log, laps: { ...d.laps, [last.id]: (d.laps[last.id] ?? []).slice(0, -1) } };
+      const early = { ...d.early }; if (last.prev) early[last.id] = last.prev; else delete early[last.id];
+      return { ...d, log, early, earlyDirty: true };
+    });
+  };
+  const modeOf = (a: Act) => (a.k === "early" ? "early" : a.k === "lap" ? "laps" : "finish");
+  const lastAct = [...desk.log].reverse().find((a) => modeOf(a) === mode);
+  const lastLabel = lastAct ? `${byIdEarly.get(lastAct.id)?.sailNumber ?? ""}${lastAct.k === "early" ? ` ${desk.early[lastAct.id] ?? "–"}` : lastAct.k === "lap" ? ` ${t.race.lapShort}${desk.laps[lastAct.id]?.length ?? 0}` : ""}` : "";
+  /** Swap a finish with the one before it (wrong order tapped). Times stay in place, the boats change slots. */
+  const moveUp = (i: number) => upd((d) => {
+    if (i < 1) return d;
+    const fin = d.fin.map((f) => ({ ...f }));
+    const a = fin[i - 1].id; fin[i - 1].id = fin[i].id; fin[i].id = a;
+    return { ...d, fin, sent: d.sent.filter((x) => x !== fin[i].id && x !== fin[i - 1].id) };
   });
   const toggleEarly = (id: string) => upd((d) => {
-    const early = { ...d.early }; if (early[id]) delete early[id]; else early[id] = earlyCode;
-    return { ...d, early, earlyDirty: true };
+    const prev = d.early[id];
+    const early = { ...d.early }; if (prev) delete early[id]; else early[id] = earlyCode;
+    return { ...d, early, earlyDirty: true, log: [...d.log, { k: "early", id, prev }] };
   });
   const undoFinish = (id: string) => {
     const wasSent = desk.sent.includes(id);
-    upd((d) => ({ ...d, fin: d.fin.filter((f) => f.id !== id), sent: d.sent.filter((x) => x !== id) }));
+    upd((d) => ({ ...d, fin: d.fin.filter((f) => f.id !== id), sent: d.sent.filter((x) => x !== id), log: d.log.filter((x) => !(x.k === "fin" && x.id === id)) }));
     if (wasSent) start(async () => {
       await removeFinish(raceId, id);
       if (desk.early[id]) await saveEarly(raceId, desk.early); // removing the finish must not drop the OCS
@@ -123,10 +149,17 @@ export function FinishRecorder({ raceId, startAt: initialStart, status: initialS
     const tod = new Intl.DateTimeFormat(intl, { timeZone: "Europe/Zurich", hour: "2-digit", minute: "2-digit", second: "2-digit" }).format(at);
     return el != null ? `${tod} · ${Math.floor(el / 3600)}:${String(Math.floor((el % 3600) / 60)).padStart(2, "0")}:${String(el % 60).padStart(2, "0")}` : tod;
   };
-  const Boat = ({ e, onTap, hot, sub }: { e: E; onTap: () => void; hot?: boolean; sub?: React.ReactNode }) => (
-    <button type="button" onClick={onTap} className={`border-2 border-ink px-1 py-3 text-center font-bold text-ink active:scale-95 ${hot ? "bg-accent" : "bg-white active:bg-accent"}`}>
+  // a plain render function (not a component), so a tap doesn't remount the button; no :active colour that can stick on phones
+  const boat = (e: E, onTap: () => void, hot?: boolean | "done", sub?: React.ReactNode) => (
+    <button key={e.id} type="button" onClick={onTap} aria-pressed={!!hot} data-done={hot === "done" || undefined}
+      className={`border-2 border-ink px-1 py-3 text-center font-bold transition-transform active:scale-95 ${hot === "done" ? "bg-ink text-paper" : hot ? "bg-accent text-ink" : "bg-white text-ink"}`}>
       <span className="block text-lg leading-tight">{e.sailNumber}</span>
       <span className="block truncate text-xs font-normal">{sub ?? e.skipper ?? e.boatName}</span>
+    </button>
+  );
+  const undoBar = (
+    <button type="button" onClick={undoLast} disabled={!lastAct} className="btn-ghost w-full py-3 text-sm disabled:opacity-30">
+      ↶ {t.race.undo}{lastAct ? `: ${lastLabel}` : ""}
     </button>
   );
   const modes = [["early", `${t.race.modeEarly}${Object.keys(desk.early).length ? ` (${Object.keys(desk.early).length})` : ""}`], ["laps", t.race.modeLaps], ["finish", `${t.race.modeFinish}${desk.fin.length ? ` (${desk.fin.length})` : ""}`]] as const;
@@ -150,7 +183,7 @@ export function FinishRecorder({ raceId, startAt: initialStart, status: initialS
             {EARLY.map((c) => <button key={c} type="button" onClick={() => setEarlyCode(c)} className={`border-2 border-ink px-3 py-1 text-xs font-bold ${earlyCode === c ? "bg-ink text-paper" : "bg-white"}`}>{c}</button>)}
           </div>
           <div className="grid grid-cols-3 gap-2 sm:grid-cols-5">
-            {entries.map((e) => <Boat key={e.id} e={e} onTap={() => toggleEarly(e.id)} hot={!!desk.early[e.id]} sub={desk.early[e.id]} />)}
+            {entries.map((e) => boat(e, () => toggleEarly(e.id), !!desk.early[e.id], desk.early[e.id]))}
           </div>
           <button type="button" disabled={!!sending || !desk.earlyDirty} onClick={sendEarly} className="btn w-full py-4 text-base disabled:opacity-40">
             {sending === "wait" ? t.race.offlineQueued : desk.earlyDirty ? t.race.earlySend.replace("{n}", String(Object.keys(desk.early).length)) : t.race.earlyClear}
@@ -162,12 +195,10 @@ export function FinishRecorder({ raceId, startAt: initialStart, status: initialS
         <div className="space-y-3">
           <div className="flex items-center justify-between gap-2 text-sm">
             <span className="text-ink/70">{t.race.lapHint}</span>
-            <button type="button" onClick={undoLap} disabled={!desk.lapLog.length} className="btn-ghost px-3 py-1 text-xs disabled:opacity-40">↶ {t.race.undo}</button>
           </div>
           <div className="grid grid-cols-3 gap-2 sm:grid-cols-5">
             {order.filter((e) => !finished.has(e.id) && !coded.has(e.id)).map((e) => (
-              <Boat key={e.id} e={e} onTap={() => tapLap(e.id)}
-                sub={<>{desk.laps[e.id]?.length ? <b>{t.race.lapShort}{desk.laps[e.id].length}</b> : (e.skipper ?? e.boatName)}{desk.early[e.id] ? <b className="text-accent"> {desk.early[e.id]}</b> : null}</>} />
+              boat(e, () => tapLap(e.id), lapDone(e.id) ? "done" : false, <>{desk.laps[e.id]?.length ? <b>{t.race.lapShort}{desk.laps[e.id].length}</b> : (e.skipper ?? e.boatName)}{desk.early[e.id] ? <b className={lapDone(e.id) ? "" : "text-accent"}> {desk.early[e.id]}</b> : null}</>)
             ))}
           </div>
         </div>
@@ -179,8 +210,7 @@ export function FinishRecorder({ raceId, startAt: initialStart, status: initialS
           {started && (
             <div className="grid grid-cols-3 gap-2 sm:grid-cols-5">
               {order.filter((e) => !finished.has(e.id) && !coded.has(e.id)).map((e) => (
-                <Boat key={e.id} e={e} onTap={() => tapFinish(e.id)}
-                  sub={<>{desk.laps[e.id]?.length ? `${t.race.lapShort}${desk.laps[e.id].length} · ` : ""}{desk.early[e.id] ? <b className="text-accent">{desk.early[e.id]}</b> : (e.skipper ?? e.boatName)}</>} />
+                boat(e, () => tapFinish(e.id), false, <>{desk.laps[e.id]?.length ? `${t.race.lapShort}${desk.laps[e.id].length} · ` : ""}{desk.early[e.id] ? <b className="text-accent">{desk.early[e.id]}</b> : (e.skipper ?? e.boatName)}</>)
               ))}
             </div>
           )}
@@ -191,11 +221,12 @@ export function FinishRecorder({ raceId, startAt: initialStart, status: initialS
           )}
         </div>
       )}
+      {earlyOpen && (mode !== "finish" || started) && undoBar}
       {msg && <p className="text-sm font-semibold">{msg}</p>}
 
       {desk.fin.length > 0 && (
         <ol className="divide-y divide-ink/10 border border-ink/20 bg-white text-sm">
-          {desk.fin.map((f) => {
+          {desk.fin.map((f, i) => {
             const e = byId.get(f.id); const code = desk.early[f.id];
             if (!code) place++;
             return (
@@ -205,7 +236,8 @@ export function FinishRecorder({ raceId, startAt: initialStart, status: initialS
                 <span className="flex-1 text-ink/70">{e?.skipper}</span>
                 <span className="font-mono text-xs text-ink/60">{[code, fmt(f.at)].filter(Boolean).join(" · ")}</span>
                 {!desk.sent.includes(f.id) && <span className="text-[10px] font-semibold uppercase text-accent">{t.race.notSent}</span>}
-                <button className="btn-danger" disabled={pending} onClick={() => undoFinish(f.id)}>{t.race.undo}</button>
+                {i > 0 && <button type="button" className="btn-ghost px-2 py-1 text-xs" title={t.race.moveUp} onClick={() => moveUp(i)}>↑</button>}
+                <button className="btn-danger" disabled={pending} onClick={() => undoFinish(f.id)}>{t.common.remove}</button>
               </li>
             );
           })}
