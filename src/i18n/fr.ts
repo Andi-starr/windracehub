@@ -96,7 +96,7 @@ const fr: Dict = {
   },
   admin: { title: "Utilisateurs & rôles", intro: "Seuls les organisateurs et les admins peuvent créer des régates. Chaque nouvel utilisateur est d'abord participant.", role: "Rôle", since: "depuis", changed: "Rôle modifié." },
   race: {
-    title: "Manche", races: "Manches", add: "Ajouter une manche", none: "Pas encore de manches.", number: "N°", sequence: "Procédure de départ", prepFlag: "Pavillon préparatoire",
+    title: "Manche", races: "Manches", add: "Ajouter une manche", none: "Pas encore de manches.", number: "N°", sequence: "Procédure de départ", black: "Noir", prepFlag: "Pavillon préparatoire",
     status: { PLANNED: "Prévue", SEQUENCE: "Procédure en cours", RUNNING: "En course", FINISHED: "Terminée", ABANDONED: "Annulée" },
     startClock: "Chrono de départ", startSequence: "Lancer la procédure", startAt: "Départ à", startIn: "Départ dans", startNow: "Maintenant (minute pleine suivante)",
     postpone: "Retard (Aperçu)", generalRecall: "Rappel général", abandon: "Annuler (N)", finishRace: "Terminer la manche", reset: "Réinitialiser",
@@ -106,6 +106,16 @@ const fr: Dict = {
     codeHint: "Code au lieu du temps", calc: "Calculer les résultats", calcPublish: "Calculer & publier", points: "Points", net: "Net", totalPts: "Total", rank: "Rang",
     calcDone: "Résultats publiés.", sequences: { "5,4,1,0": "5-4-1-0 (standard)", "3,2,1,0": "3-2-1-0 (court)", "10,5,4,1,0": "10-5-4-1-0", "6,5,4,1,0": "6-5-4-1-0 (départs par série)" },
     watchLive: "Chrono de départ en direct", officialView: "Vue comité de course",
+  },
+  draft: {
+    open: "Rédiger un document avec Claude", title: "Brouillon avec Claude",
+    intro: "Claude rédige un brouillon à partir des informations de la régate (dates, lieu, classes, programme). Vous le vérifiez et le modifiez, puis il est publié en PDF.",
+    type: "Document", lang: "Langue du document", notes: "Indications pour Claude (facultatif)",
+    notesPh: "p. ex. finance d'inscription CHF 60, parcours banane, 2 manches par jour, zone de départ, jury : …",
+    generate: "Créer le brouillon", regenerate: "Rédiger à nouveau", stop: "Arrêter", writing: "Claude rédige…",
+    text: "Brouillon (modifiable)", publish: "Publier en PDF", preview: "Aperçu PDF", discard: "Supprimer",
+    check: "À vérifier avant publication : compléter les champs entre [crochets]. Claude peut se tromper.",
+    noKey: "La rédaction avec Claude n'est pas encore configurée : ANTHROPIC_API_KEY manque dans Vercel.",
   },
 };
 export default fr;

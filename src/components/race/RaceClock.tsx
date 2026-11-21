@@ -6,6 +6,9 @@ import { Flag } from "./Flag";
 import { beep, signalsFor, unlockAudio, useNow, useRaceState, useServerClock, type RaceState } from "./clock";
 import { signal, startSequence } from "@/app/manage/races";
 
+const SEQS = ["5,4,1,0", "3,2,1,0", "10,5,4,1,0", "6,5,4,1,0"] as const;
+const PREP = ["P", "I", "Z", "U", "BLACK"];
+
 function fmtCountdown(ms: number) {
   const neg = ms < 0;
   const a = Math.abs(ms);
@@ -21,6 +24,8 @@ export function RaceClock({ initial, className, official = false }: { initial: R
   const router = useRouter();
   const [sound, setSound] = useState(false);
   const [at, setAt] = useState("");
+  const [seq, setSeq] = useState(initial.sequence);
+  const [prep, setPrep] = useState(initial.prepFlag);
   const [busy, setBusy] = useState(false);
   const fired = useRef<Set<string>>(new Set());
   const root = useRef<HTMLDivElement>(null);
@@ -110,7 +115,19 @@ export function RaceClock({ initial, className, official = false }: { initial: R
                 <label className="mb-1 block text-xs text-sea-200" htmlFor="startat">{t.race.startAt}</label>
                 <input id="startat" type="time" value={at} onChange={(e) => setAt(e.target.value)} className="rounded-lg bg-white px-3 py-2 text-slate-900" />
               </div>
-              <button disabled={busy} className="rounded-lg bg-emerald-500 px-4 py-2 font-semibold hover:bg-emerald-600" onClick={() => { unlockAudio(); act(() => startSequence(race.id, at)); }}>
+              <div>
+                <label className="mb-1 block text-xs text-sea-200" htmlFor="seq">{t.race.sequence}</label>
+                <select id="seq" value={seq} onChange={(e) => setSeq(e.target.value)} className="rounded-lg bg-white px-3 py-2 text-slate-900">
+                  {SEQS.map((s) => <option key={s} value={s}>{t.race.sequences[s]}</option>)}
+                </select>
+              </div>
+              <div>
+                <label className="mb-1 block text-xs text-sea-200" htmlFor="prep">{t.race.prepFlag}</label>
+                <select id="prep" value={prep} onChange={(e) => setPrep(e.target.value)} className="rounded-lg bg-white px-3 py-2 text-slate-900">
+                  {PREP.map((p) => <option key={p} value={p}>{p === "BLACK" ? t.race.black : p}</option>)}
+                </select>
+              </div>
+              <button disabled={busy} className="rounded-lg bg-emerald-500 px-4 py-2 font-semibold hover:bg-emerald-600" onClick={() => { unlockAudio(); act(() => startSequence(race.id, at, seq, prep)); }}>
                 ▶ {at ? t.race.startSequence : t.race.startNow}
               </button>
             </div>

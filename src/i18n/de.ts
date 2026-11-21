@@ -95,7 +95,7 @@ const de = {
   },
   admin: { title: "Benutzer & Rollen", intro: "Nur Veranstalter und Admins können Regatten erstellen. Jeder neue Benutzer ist zuerst Teilnehmer.", role: "Rolle", since: "seit", changed: "Rolle geändert." },
   race: {
-    title: "Wettfahrt", races: "Wettfahrten", add: "Wettfahrt hinzufügen", none: "Noch keine Wettfahrten.", number: "Nr.", sequence: "Startverfahren", prepFlag: "Vorbereitungsflagge",
+    title: "Wettfahrt", races: "Wettfahrten", add: "Wettfahrt hinzufügen", none: "Noch keine Wettfahrten.", number: "Nr.", sequence: "Startverfahren", black: "Schwarz", prepFlag: "Vorbereitungsflagge",
     status: { PLANNED: "Geplant", SEQUENCE: "Startverfahren läuft", RUNNING: "Unterwegs", FINISHED: "Beendet", ABANDONED: "Abgebrochen" },
     startClock: "Startuhr", startSequence: "Startverfahren starten", startAt: "Start um", startIn: "Start in", startNow: "Sofort (nächste volle Minute)",
     postpone: "Startverschiebung (AP)", generalRecall: "Allgemeiner Rückruf", abandon: "Abbrechen (N)", finishRace: "Wettfahrt beenden", reset: "Zurücksetzen",
@@ -105,6 +105,16 @@ const de = {
     codeHint: "Code statt Zeit", calc: "Resultate berechnen", calcPublish: "Berechnen & veröffentlichen", points: "Punkte", net: "Netto", totalPts: "Total", rank: "Rang",
     calcDone: "Resultate veröffentlicht.", sequences: { "5,4,1,0": "5-4-1-0 (Standard)", "3,2,1,0": "3-2-1-0 (kurz)", "10,5,4,1,0": "10-5-4-1-0", "6,5,4,1,0": "6-5-4-1-0 (Klassenstarts)" },
     watchLive: "Live-Startuhr", officialView: "Ansicht Wettfahrtleitung",
+  },
+  draft: {
+    open: "Dokument mit Claude entwerfen", title: "Entwurf mit Claude",
+    intro: "Claude schreibt einen Entwurf aus den Angaben dieser Regatta (Daten, Ort, Klassen, Programm). Du prüfst und bearbeitest den Text, dann wird er als PDF veröffentlicht.",
+    type: "Dokument", lang: "Sprache des Dokuments", notes: "Hinweise an Claude (optional)",
+    notesPh: "z. B. Meldegebühr CHF 60, Up-and-down-Bahn, 2 Wettfahrten pro Tag, Startgebiet vor Wollishofen, Jury: …",
+    generate: "Entwurf erstellen", regenerate: "Neu entwerfen", stop: "Stopp", writing: "Claude schreibt…",
+    text: "Entwurf (frei bearbeitbar)", publish: "Als PDF veröffentlichen", preview: "PDF-Vorschau", discard: "Verwerfen",
+    check: "Bitte vor dem Veröffentlichen prüfen: Platzhalter in [eckigen Klammern] ausfüllen. Claude kann Fehler machen.",
+    noKey: "Entwurf mit Claude ist noch nicht eingerichtet: ANTHROPIC_API_KEY fehlt in Vercel.",
   },
 };
 export default de;

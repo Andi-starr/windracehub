@@ -32,7 +32,7 @@ export default async function RacePage({ params }: { params: Promise<{ id: strin
         <div>
           <Link href={`/manage/${id}#races`} className="text-sm text-sea-600 underline">← {race.event.title}</Link>
           <h1 className="text-xl font-bold text-sea-900">{className} · {t.race.title} {race.number}</h1>
-          <p className="text-sm text-slate-500">{t.race.sequences[race.sequence as "5,4,1,0"] ?? race.sequence} · {t.race.prepFlag} {race.prepFlag}</p>
+          {race.startAt && <p className="text-sm text-slate-500">{t.race.sequences[race.sequence as "5,4,1,0"] ?? race.sequence} · {t.race.prepFlag} {race.prepFlag}</p>}
         </div>
         <Link href={`/e/${race.event.slug}/race/${race.id}`} target="_blank" className="btn-ghost">{t.race.watchLive} ↗</Link>
       </div>

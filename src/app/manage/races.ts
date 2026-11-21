@@ -24,20 +24,23 @@ export async function addRace(eventId: string, fd: FormData) {
   await requireEventRole(eventId);
   const classId = String(fd.get("classId") ?? "") || null;
   if (classId && !(await db.eventClass.findFirst({ where: { id: classId, eventId } }))) return;
-  const sequence = String(fd.get("sequence") ?? "5,4,1,0");
-  const prepFlag = String(fd.get("prepFlag") ?? "P").slice(0, 8);
   const last = await db.race.findFirst({ where: { eventId, classId }, orderBy: { number: "desc" } });
   const r = await db.race.create({
-    data: { eventId, classId, number: (last?.number ?? 0) + 1, sequence: SEQ_RE.test(sequence) ? sequence : "5,4,1,0", prepFlag },
+    data: { eventId, classId, number: (last?.number ?? 0) + 1 },
   });
   revalidatePath(`/manage/${eventId}`);
   redirect(`/manage/${eventId}/race/${r.id}`);
 }
 
-/** at = "HH:MM" (Zurich, today) for the START; empty = first signal at the next full minute. */
-export async function startSequence(raceId: string, at: string) {
+const PREP_FLAGS = ["P", "I", "Z", "U", "BLACK"];
+
+/** Chosen when the clock is opened: sequence + preparatory flag.
+ *  at = "HH:MM" (Zurich, today) for the START; empty = first signal at the next full minute. */
+export async function startSequence(raceId: string, at: string, sequence?: string, prepFlag?: string) {
   const r = await raceFor(raceId);
-  const first = Math.max(...r.sequence.split(",").map(Number));
+  const seq = sequence && SEQ_RE.test(sequence) ? sequence : r.sequence;
+  const prep = prepFlag && PREP_FLAGS.includes(prepFlag) ? prepFlag : r.prepFlag;
+  const first = Math.max(...seq.split(",").map(Number));
   let startAt: Date;
   if (/^\d{2}:\d{2}$/.test(at)) {
     const today = new Intl.DateTimeFormat("en-CA", { timeZone: "Europe/Zurich" }).format(new Date());
@@ -46,7 +49,7 @@ export async function startSequence(raceId: string, at: string) {
   } else {
     startAt = new Date(Math.ceil((Date.now() + 5e3) / 60e3) * 60e3 + first * 60e3);
   }
-  await db.race.update({ where: { id: raceId }, data: { status: "SEQUENCE", startAt, note: null } });
+  await db.race.update({ where: { id: raceId }, data: { status: "SEQUENCE", startAt, note: null, sequence: seq, prepFlag: prep } });
   touch(r);
 }
 

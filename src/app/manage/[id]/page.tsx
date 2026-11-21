@@ -8,6 +8,7 @@ import { DOC_TYPE_KEYS, fmtDateTime, fmtRange, fmtTime, fmtDate, toDayInput, toZ
 import { getT } from "@/i18n";
 import { EventForm } from "@/components/EventForm";
 import { DocUploader } from "@/components/DocUploader";
+import { DocDrafter } from "@/components/DocDrafter";
 import { ResultUploader } from "@/components/ResultUploader";
 import { ConfirmButton, EntriesForm, InviteForm } from "@/components/ActionForms";
 import * as A from "../actions";
@@ -16,8 +17,6 @@ import { addRace } from "../races";
 export const dynamic = "force-dynamic";
 export const metadata = { title: "Manage" };
 
-const SEQS = ["5,4,1,0", "3,2,1,0", "10,5,4,1,0", "6,5,4,1,0"] as const;
-const PREP = ["P", "I", "Z", "U", "BLACK"];
 
 export default async function ManageEvent({ params, searchParams }: { params: Promise<{ id: string }>; searchParams: Promise<{ neu?: string }> }) {
   const { id } = await params;
@@ -81,6 +80,7 @@ export default async function ManageEvent({ params, searchParams }: { params: Pr
       <section id="docs" className="card">
         <h2 className="h2">{t.manage.publishDoc}</h2>
         <DocUploader eventId={e.id} />
+        <div className="mt-4"><DocDrafter eventId={e.id} eventTitle={e.title} enabled={!!process.env.ANTHROPIC_API_KEY} /></div>
         {e.documents.length > 0 && (
           <div className="mt-5">
             <h3 className="mb-2 text-sm font-semibold text-slate-600">{t.manage.published} ({e.documents.length})</h3>
@@ -165,14 +165,6 @@ export default async function ManageEvent({ params, searchParams }: { params: Pr
               {e.classes.map((c) => <option key={c.id} value={c.id}>{c.name}</option>)}
               <option value="">{t.common.all}</option>
             </select>
-          </div>
-          <div>
-            <label className="label" htmlFor="race-seq">{t.race.sequence}</label>
-            <select id="race-seq" name="sequence" className="input">{SEQS.map((s) => <option key={s} value={s}>{t.race.sequences[s]}</option>)}</select>
-          </div>
-          <div>
-            <label className="label" htmlFor="race-prep">{t.race.prepFlag}</label>
-            <select id="race-prep" name="prepFlag" className="input">{PREP.map((p) => <option key={p} value={p}>{p}</option>)}</select>
           </div>
           <button className="btn">{t.race.add}</button>
         </form>

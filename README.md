@@ -37,6 +37,7 @@ Ohne `SUPABASE_URL` landen Uploads im Ordner `uploads/` (nur für lokal).
    Unter *Project settings → API* `SUPABASE_URL` und `service_role`-Key kopieren.
 2. **GitHub:** diesen Ordner in ein Repo pushen.
 3. **Vercel:** Repo importieren, die Variablen aus `.env.example` setzen (`SESSION_SECRET` = `openssl rand -hex 32`, `APP_URL=https://windracehub.com`). Deploy führt die Migrationen automatisch aus.
+4. **Optional, Entwurf mit Claude:** `ANTHROPIC_API_KEY` (von console.anthropic.com) in Vercel setzen. Ohne Key ist der Knopf sichtbar, aber gesperrt.
 4. Beim Deploy laufen Migrationen und der Import der Zürcher Regatten automatisch (mehrfach ausführen ist unschädlich).
 5. Auf der Seite registrieren: der erste Account wird Admin.
 6. Domain `windracehub.com` in Vercel unter *Domains* hinzufügen.

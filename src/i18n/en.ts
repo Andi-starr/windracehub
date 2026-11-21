@@ -96,7 +96,7 @@ const en: Dict = {
   },
   admin: { title: "Users & roles", intro: "Only hosts and admins can create regattas. Every new user starts as a participant.", role: "Role", since: "since", changed: "Role changed." },
   race: {
-    title: "Race", races: "Races", add: "Add race", none: "No races yet.", number: "No.", sequence: "Start sequence", prepFlag: "Preparatory flag",
+    title: "Race", races: "Races", add: "Add race", none: "No races yet.", number: "No.", sequence: "Start sequence", black: "Black", prepFlag: "Preparatory flag",
     status: { PLANNED: "Planned", SEQUENCE: "Start sequence running", RUNNING: "Racing", FINISHED: "Finished", ABANDONED: "Abandoned" },
     startClock: "Start clock", startSequence: "Start sequence", startAt: "Start at", startIn: "Start in", startNow: "Now (next full minute)",
     postpone: "Postpone (AP)", generalRecall: "General recall", abandon: "Abandon (N)", finishRace: "End race", reset: "Reset",
@@ -106,6 +106,16 @@ const en: Dict = {
     codeHint: "Code instead of time", calc: "Calculate results", calcPublish: "Calculate & publish", points: "Points", net: "Net", totalPts: "Total", rank: "Rank",
     calcDone: "Results published.", sequences: { "5,4,1,0": "5-4-1-0 (standard)", "3,2,1,0": "3-2-1-0 (short)", "10,5,4,1,0": "10-5-4-1-0", "6,5,4,1,0": "6-5-4-1-0 (class starts)" },
     watchLive: "Live start clock", officialView: "Race committee view",
+  },
+  draft: {
+    open: "Draft a document with Claude", title: "Draft with Claude",
+    intro: "Claude writes a draft from this regatta's details (dates, venue, classes, schedule). You check and edit the text, then it is published as a PDF.",
+    type: "Document", lang: "Document language", notes: "Notes for Claude (optional)",
+    notesPh: "e.g. entry fee CHF 60, windward-leeward course, 2 races per day, start area off Wollishofen, jury: …",
+    generate: "Create draft", regenerate: "Draft again", stop: "Stop", writing: "Claude is writing…",
+    text: "Draft (edit freely)", publish: "Publish as PDF", preview: "PDF preview", discard: "Discard",
+    check: "Check before publishing: fill in the placeholders in [square brackets]. Claude can make mistakes.",
+    noKey: "Drafting with Claude isn't set up yet: ANTHROPIC_API_KEY is missing in Vercel.",
   },
 };
 export default en;
