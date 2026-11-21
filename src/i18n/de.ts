@@ -10,6 +10,12 @@ const de = {
     new: "Neu", file: "Datei", all: "Alle", none: "Keine", yes: "Ja", no: "Nein", search: "Suche", filter: "Filtern",
     loading: "…", error: "Fehler", class: "Klasse", club: "Club", total: "Gesamt / andere", rows: "Zeilen", name: "Name", email: "E-Mail",
   },
+  start: {
+    kicker: "Regatten in der Schweiz", title: "Wo und wann gesegelt wird.", next: "Nächste Regatten", all: "Alle Regatten", search: "Regatta suchen",
+    statusTitle: "Übersicht", nextRace: "Nächste Regatta", thisWeek: "Nächste 7 Tage", thisMonth: "Nächste 30 Tage", season: "Saison", clubs: "Clubs",
+    regattas: "Regatten", today: "heute", tomorrow: "morgen", inDays: "in {n} Tagen", running: "läuft", none: "Zurzeit sind keine kommenden Regatten eingetragen.",
+    photos: "Vom Wasser", searchPh: "Regatta, Ort oder Club",
+  },
   home: {
     year: "Jahr", month: "Monat", allPeriods: "Alle", allYears: "Alle Jahre", allMonths: "Alle Monate", reset: "Filter zurücksetzen", count: "Regatten", clubsTitle: "Clubs", clubsIntro: "Alle Clubs mit Regatten auf windracehub.", events: "Regatten", date: "Datum", place: "Ort", status: "Status",
     title: "Regatten in der Schweiz", subtitle: "Ausschreibungen, Segelanweisungen, Mitteilungen und Resultate an einem Ort.",

@@ -21,7 +21,7 @@ export default async function ClubsPage({ searchParams }: { searchParams: Promis
       <ul className="grid gap-2 sm:grid-cols-2">
         {clubs.map((c) => (
           <li key={c.id}>
-            <Link href={`/?club=${c.id}&zeit=alle`} className="flex items-center justify-between gap-3 rounded-xl border border-slate-200 bg-white px-4 py-3 shadow-sm hover:border-sea-500">
+            <Link href={`/regatten?club=${c.id}&zeit=alle`} className="flex items-center justify-between gap-3 rounded-xl border border-slate-200 bg-white px-4 py-3 shadow-sm hover:border-sea-500">
               <span><span className="font-semibold">{c.name}</span>{c.shortName && <span className="text-slate-500"> · {c.shortName}</span>}</span>
               <span className="badge bg-sea-100 text-sea-700">{c._count.events} {t.home.events}</span>
             </Link>

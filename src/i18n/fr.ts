@@ -11,6 +11,12 @@ const fr: Dict = {
     new: "Nouveau", file: "Fichier", all: "Tous", none: "Aucun", yes: "Oui", no: "Non", search: "Recherche", filter: "Filtrer",
     loading: "…", error: "Erreur", class: "Série", club: "Club", total: "Général / autre", rows: "lignes", name: "Nom", email: "E-mail",
   },
+  start: {
+    kicker: "Régates en Suisse", title: "Où et quand on régate.", next: "Prochaines régates", all: "Toutes les régates", search: "Chercher une régate",
+    statusTitle: "Aperçu", nextRace: "Prochaine régate", thisWeek: "7 prochains jours", thisMonth: "30 prochains jours", season: "Saison", clubs: "Clubs",
+    regattas: "régates", today: "aujourd’hui", tomorrow: "demain", inDays: "dans {n} jours", running: "en cours", none: "Aucune régate à venir pour le moment.",
+    photos: "Sur l’eau", searchPh: "Régate, lieu ou club",
+  },
   home: {
     year: "Année", month: "Mois", allPeriods: "Toutes", allYears: "Toutes les années", allMonths: "Tous les mois", reset: "Réinitialiser les filtres", count: "régates", clubsTitle: "Clubs", clubsIntro: "Tous les clubs avec des régates sur windracehub.", events: "Régates", date: "Date", place: "Lieu", status: "Statut",
     title: "Régates en Suisse", subtitle: "Avis de course, instructions de course, communiqués et résultats au même endroit.",

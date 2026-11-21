@@ -11,6 +11,12 @@ const en: Dict = {
     new: "New", file: "File", all: "All", none: "None", yes: "Yes", no: "No", search: "Search", filter: "Filter",
     loading: "…", error: "Error", class: "Class", club: "Club", total: "Overall / other", rows: "rows", name: "Name", email: "Email",
   },
+  start: {
+    kicker: "Regattas in Switzerland", title: "Where and when we race.", next: "Next regattas", all: "All regattas", search: "Find a regatta",
+    statusTitle: "Overview", nextRace: "Next regatta", thisWeek: "Next 7 days", thisMonth: "Next 30 days", season: "Season", clubs: "Clubs",
+    regattas: "regattas", today: "today", tomorrow: "tomorrow", inDays: "in {n} days", running: "on now", none: "No upcoming regattas listed at the moment.",
+    photos: "On the water", searchPh: "Regatta, venue or club",
+  },
   home: {
     year: "Year", month: "Month", allPeriods: "All", allYears: "All years", allMonths: "All months", reset: "Clear filters", count: "regattas", clubsTitle: "Clubs", clubsIntro: "All clubs with regattas on windracehub.", events: "Regattas", date: "Date", place: "Venue", status: "Status",
     title: "Regattas in Switzerland", subtitle: "Notices of race, sailing instructions, notices and results in one place.",
