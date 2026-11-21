@@ -86,6 +86,8 @@ export async function signal(raceId: string, kind: "AP" | "X1" | "N" | "FINISH" 
 export async function recordFinish(raceId: string, entryId: string, clientAt: number) {
   const r = await raceFor(raceId);
   const now = Date.now();
+  // no finishes before the start signal, or in a race that isn't sailing
+  if (!r.startAt || now < r.startAt.getTime() - 1e3 || r.status === "PLANNED" || r.status === "ABANDONED") return;
   const at = Math.abs(clientAt - now) < 15e3 ? new Date(clientAt) : new Date(now);
   const count = await db.finish.count({ where: { raceId, code: null } });
   await db.finish.upsert({

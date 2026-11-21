@@ -1,5 +1,5 @@
 "use client";
-import { useState, useTransition } from "react";
+import { useEffect, useState, useTransition } from "react";
 import { useRouter } from "next/navigation";
 import { useT } from "@/i18n/client";
 import { recordFinish, removeFinish, setCode } from "@/app/manage/races";
@@ -15,6 +15,10 @@ export function FinishRecorder({ raceId, startAt, entries, finishes }: { raceId:
   const router = useRouter();
   const [pending, start] = useTransition();
   const [optimistic, setOptimistic] = useState<string[]>([]);
+  // boats can only finish once the start signal has been made
+  const [now, setNow] = useState(() => Date.now());
+  useEffect(() => { const i = setInterval(() => setNow(Date.now()), 500); return () => clearInterval(i); }, []);
+  const started = !!startAt && now + (sync?.offset ?? 0) >= startAt;
   const done = new Set([...finishes.map((f) => f.entryId), ...optimistic]);
   const byId = new Map(entries.map((e) => [e.id, e]));
   const fmt = (iso: string | null) => {
@@ -34,15 +38,15 @@ export function FinishRecorder({ raceId, startAt, entries, finishes }: { raceId:
   return (
     <div className="space-y-4">
       <div>
-        <p className="mb-2 text-sm text-slate-600">{t.race.tapToFinish}</p>
-        <div className="grid grid-cols-3 gap-2 sm:grid-cols-5">
+        <p className="mb-2 text-sm text-slate-600">{started ? t.race.tapToFinish : t.race.finishAfterStart}</p>
+        {started && <div className="grid grid-cols-3 gap-2 sm:grid-cols-5">
           {entries.filter((e) => !done.has(e.id)).map((e) => (
             <button key={e.id} onClick={() => tap(e.id)} className="rounded-xl border-2 border-ink bg-white px-2 py-4 text-center text-lg font-bold text-ink active:scale-95 active:bg-accent">
               <span className="block text-lg">{e.sailNumber}</span>
               <span className="block truncate text-xs font-normal text-slate-500">{e.skipper ?? e.boatName}</span>
             </button>
           ))}
-        </div>
+        </div>}
       </div>
       {ordered.length > 0 && (
         <ol className="divide-y divide-slate-100 rounded-lg border border-slate-200 bg-white text-sm">
