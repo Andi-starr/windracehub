@@ -51,18 +51,64 @@ export type RaceState = { id: string; status: string; startAt: number | null; se
 export function useRaceState(initial: RaceState, pollMs = 2000) {
   const [race, setRace] = useState(initial);
   const id = initial.id;
+  // after a local action the server copy is ignored until it has caught up (or 20 s passed), so polls can't undo it
+  const hold = useRef(0);
   const refetch = useRef(async () => {
     try {
       const r = await fetch(`/api/race/${id}`, { cache: "no-store" });
-      if (r.ok) setRace(await r.json());
-    } catch { /* ignore */ }
+      if (!r.ok) return;
+      const next: RaceState = await r.json();
+      if (Date.now() < hold.current) return;
+      setRace(next);
+    } catch { /* offline: keep the local state */ }
   });
   useEffect(() => {
-    const iv = setInterval(() => refetch.current(), pollMs);
+    const iv = setInterval(() => { if (document.visibilityState === "visible") refetch.current(); }, pollMs);
     return () => clearInterval(iv);
   }, [pollMs]);
   useEffect(() => setRace(initial), [initial]);
-  return { race, refetch: () => refetch.current() };
+  // other components on the page (finish recorder) follow the clock without their own request
+  useEffect(() => { window.dispatchEvent(new CustomEvent("wrh-race", { detail: race })); }, [race]);
+  const setLocal = (patch: Partial<RaceState>) => { hold.current = Date.now() + 20e3; setRace((r) => ({ ...r, ...patch, updatedAt: Date.now() })); };
+  const release = () => { hold.current = 0; };
+  return { race, refetch: () => refetch.current(), setLocal, release };
+}
+
+/** Listen to the clock of one race (start time / status), as broadcast by useRaceState. */
+export function useRaceBroadcast(id: string, initial: { startAt: number | null; status: string }) {
+  const [s, setS] = useState(initial);
+  useEffect(() => {
+    const on = (e: Event) => { const d = (e as CustomEvent<RaceState>).detail; if (d.id === id) setS({ startAt: d.startAt, status: d.status }); };
+    window.addEventListener("wrh-race", on);
+    return () => window.removeEventListener("wrh-race", on);
+  }, [id]);
+  return s;
+}
+
+/** Run a server call, retrying every 4 s while offline (up to 30 min). Resolves with the result once it got through. */
+export async function sendWithRetry<T>(fn: () => Promise<T>, onWait?: (waiting: boolean) => void): Promise<T> {
+  const until = Date.now() + 30 * 60e3;
+  for (;;) {
+    try { const r = await fn(); onWait?.(false); return r; }
+    catch (e) { if (Date.now() > until) { onWait?.(false); throw e; } onWait?.(true); await new Promise((r) => setTimeout(r, 4000)); }
+  }
+}
+
+/** Start time the way the server computes it, so the start device can run the clock immediately. */
+export function computeStart(at: string, sequence: string, now: number, extraMin = 0) {
+  const first = Math.max(...sequence.split(",").map(Number));
+  if (/^\d{2}:\d{2}$/.test(at)) {
+    const day = new Intl.DateTimeFormat("en-CA", { timeZone: "Europe/Zurich" }).format(now);
+    const [h, m] = at.split(":").map(Number);
+    // Zurich offset for that day
+    const probe = new Date(`${day}T12:00:00Z`);
+    const zh = Number(new Intl.DateTimeFormat("en-GB", { timeZone: "Europe/Zurich", hour: "2-digit", hourCycle: "h23" }).format(probe));
+    const off = (zh - 12) * 3600e3;
+    let t = Date.parse(`${day}T00:00:00Z`) + (h * 60 + m) * 60e3 - off;
+    if (t - first * 60e3 < now) t = Math.ceil(now / 60e3) * 60e3 + first * 60e3;
+    return t;
+  }
+  return Math.ceil((now + 5e3) / 60e3) * 60e3 + extraMin * 60e3 + first * 60e3;
 }
 
 export type Signal = { at: number; min: number; kind: "attention" | "warning" | "prep" | "prepDown" | "start"; long?: boolean };

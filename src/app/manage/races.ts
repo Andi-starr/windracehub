@@ -30,14 +30,16 @@ export async function addRace(eventId: string, fd: FormData) {
     data: { eventId, classId, number: (last?.number ?? 0) + 1 },
   });
   revalidatePath(`/manage/${eventId}`);
-  redirect(fd.get("to") === "racing" ? `/manage/${eventId}/racing?race=${r.id}` : `/manage/${eventId}/race/${r.id}`);
+  // in race-day mode a new race opens next to a race that is still running (split screen)
+  const keep = String(fd.get("keep") ?? "");
+  redirect(fd.get("to") === "racing" ? `/manage/${eventId}/racing?${keep ? `race=${keep}&race2=${r.id}` : `race=${r.id}`}` : `/manage/${eventId}/race/${r.id}`);
 }
 
 const PREP_FLAGS = ["P", "I", "Z", "U", "BLACK"];
 
 /** Chosen when the clock is opened: sequence + preparatory flag.
  *  at = "HH:MM" (Zurich, today) for the START; empty = first signal at the next full minute. */
-export async function startSequence(raceId: string, at: string, sequence?: string, prepFlag?: string) {
+export async function startSequence(raceId: string, at: string, sequence?: string, prepFlag?: string, clientStartAt?: number) {
   const r = await raceFor(raceId);
   const seq = sequence && SEQ_RE.test(sequence) ? sequence : r.sequence;
   const prep = prepFlag && PREP_FLAGS.includes(prepFlag) ? prepFlag : r.prepFlag;
@@ -52,6 +54,8 @@ export async function startSequence(raceId: string, at: string, sequence?: strin
     const extra = at === "+1" ? 60e3 : 0;
     startAt = new Date(Math.ceil((Date.now() + 5e3) / 60e3) * 60e3 + extra + first * 60e3);
   }
+  // the start device computes the start itself so the clock runs without waiting for the network; accept it if plausible
+  if (clientStartAt && clientStartAt > Date.now() - 15 * 60e3 && clientStartAt < Date.now() + 12 * 3600e3) startAt = new Date(clientStartAt);
   await db.race.update({ where: { id: raceId }, data: { status: "SEQUENCE", startAt, note: null, sequence: seq, prepFlag: prep } });
   touch(r);
 }
@@ -82,40 +86,49 @@ export async function signal(raceId: string, kind: "AP" | "X1" | "N" | "FINISH" 
   touch(r);
 }
 
-/** clientAt = synced client time in ms; accepted if within 15 s of server time. */
-export async function recordFinish(raceId: string, entryId: string, clientAt: number) {
+const EARLY_CODES = ["OCS", "UFD", "BFD"];
+
+/** Start device: "start clear" sends the early starters in one go. codes = entryId -> OCS/UFD/BFD; others lose an early code. */
+export async function saveEarly(raceId: string, codes: Record<string, string>) {
   const r = await raceFor(raceId);
-  const now = Date.now();
-  // no finishes before the start signal, or in a race that isn't sailing
-  if (!r.startAt || now < r.startAt.getTime() - 1e3 || r.status === "PLANNED" || r.status === "ABANDONED") return;
-  const at = Math.abs(clientAt - now) < 15e3 ? new Date(clientAt) : new Date(now);
-  const count = await db.finish.count({ where: { raceId, code: null } });
-  const prev = await db.finish.findUnique({ where: { raceId_entryId: { raceId, entryId } } });
-  // an early starter who didn't come back keeps OCS/UFD/BFD even when it finishes; the time is kept for the record
-  const keep = prev?.code && EARLY_CODES.includes(prev.code) ? prev.code : null;
-  await db.finish.upsert({
-    where: { raceId_entryId: { raceId, entryId } },
-    create: { raceId, entryId, finishedAt: at, position: count + 1 },
-    update: { finishedAt: at, code: keep, position: keep ? null : undefined },
-  });
+  if (!r.startAt) return { error: "no start" };
+  const entries = new Set((await db.entry.findMany({ where: { eventId: r.eventId, classId: r.classId }, select: { id: true } })).map((e) => e.id));
+  const existing = await db.finish.findMany({ where: { raceId, code: { in: EARLY_CODES } } });
+  const ops = [];
+  for (const f of existing) if (!codes[f.entryId]) ops.push(f.finishedAt ? db.finish.update({ where: { id: f.id }, data: { code: null } }) : db.finish.delete({ where: { id: f.id } }));
+  for (const [entryId, code] of Object.entries(codes)) {
+    if (!entries.has(entryId) || !EARLY_CODES.includes(code)) continue;
+    ops.push(db.finish.upsert({ where: { raceId_entryId: { raceId, entryId } }, create: { raceId, entryId, code }, update: { code, position: null } }));
+  }
+  await db.$transaction(ops);
+  await renumber(raceId);
+  touch(r);
+  return { ok: true };
+}
+
+/** Finish device: publish locally recorded finishes (entryId + synced time in ms) in one go. Early starters keep their code. */
+export async function saveFinishes(raceId: string, list: { entryId: string; at: number }[]) {
+  const r = await raceFor(raceId);
+  if (!r.startAt) return { error: "no start" };
+  const start = r.startAt.getTime();
+  const entries = new Set((await db.entry.findMany({ where: { eventId: r.eventId, classId: r.classId }, select: { id: true } })).map((e) => e.id));
+  const prev = new Map((await db.finish.findMany({ where: { raceId } })).map((f) => [f.entryId, f]));
+  const ops = list
+    .filter((x) => entries.has(x.entryId) && x.at >= start - 1e3 && x.at < start + 24 * 3600e3)
+    .map((x) => {
+      const p = prev.get(x.entryId);
+      const keep = p?.code && EARLY_CODES.includes(p.code) ? p.code : null;
+      return db.finish.upsert({
+        where: { raceId_entryId: { raceId, entryId: x.entryId } },
+        create: { raceId, entryId: x.entryId, finishedAt: new Date(x.at) },
+        update: { finishedAt: new Date(x.at), code: keep, ...(keep ? { position: null } : {}) },
+      });
+    });
+  await db.$transaction(ops);
   await renumber(raceId);
   if (r.status === "SEQUENCE") await db.race.update({ where: { id: raceId }, data: { status: "RUNNING" } });
   touch(r);
-}
-
-const EARLY_CODES = ["OCS", "UFD", "BFD"];
-
-/** Mark (or clear) an early starter, from one minute before the start. code "" = clear. */
-export async function markEarly(raceId: string, entryId: string, code: string) {
-  const r = await raceFor(raceId);
-  if (!r.startAt || Date.now() < r.startAt.getTime() - 61e3) return;
-  if (code && !EARLY_CODES.includes(code)) return;
-  const prev = await db.finish.findUnique({ where: { raceId_entryId: { raceId, entryId } } });
-  if (code) await db.finish.upsert({ where: { raceId_entryId: { raceId, entryId } }, create: { raceId, entryId, code }, update: { code, position: null } });
-  else if (prev?.finishedAt) await db.finish.update({ where: { id: prev.id }, data: { code: null } });
-  else if (prev) await db.finish.delete({ where: { id: prev.id } });
-  await renumber(raceId);
-  touch(r);
+  return { ok: true, saved: ops.length };
 }
 
 export async function setCode(raceId: string, entryId: string, code: string) {

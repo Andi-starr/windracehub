@@ -1,9 +1,8 @@
 "use client";
 import { useEffect, useRef, useState } from "react";
-import { useRouter } from "next/navigation";
 import { useT } from "@/i18n/client";
 import { Flag } from "./Flag";
-import { beep, flagFor, signalsFor, unlockAudio, useNow, useRaceState, useServerClock, type RaceState } from "./clock";
+import { beep, computeStart, flagFor, sendWithRetry, signalsFor, unlockAudio, useNow, useRaceState, useServerClock, type RaceState } from "./clock";
 import { setPrepFlag, signal, startSequence } from "@/app/manage/races";
 
 const SEQS = ["5,4,1,0", "3,2,1,0", "10,5,4,1,0", "6,5,4,1,0"] as const;
@@ -17,12 +16,12 @@ function fmtCountdown(ms: number) {
   return `${neg ? "−" : "+"}${String(m).padStart(2, "0")}:${String(s).padStart(2, "0")}.${d}`;
 }
 
-export function RaceClock({ initial, className, official = false }: { initial: RaceState; className: string; official?: boolean }) {
+export function RaceClock({ initial, className, official = false, compact = false }: { initial: RaceState; className: string; official?: boolean; compact?: boolean }) {
   const { t, intl } = useT();
   const sync = useServerClock();
   const now = useNow(sync?.offset ?? 0);
-  const { race, refetch } = useRaceState(initial, official ? 1500 : 2000);
-  const router = useRouter();
+  const { race, refetch, setLocal, release } = useRaceState(initial, official ? 3000 : 2000);
+  const [waiting, setWaiting] = useState(false);
   const [sound, setSound] = useState(false);
   const [at, setAt] = useState("");
   const [seq, setSeq] = useState(initial.sequence);
@@ -61,7 +60,19 @@ export function RaceClock({ initial, className, official = false }: { initial: R
   else if (race.note === "X1") flags.push({ code: "X1", label: "1st substitute" });
   else if (race.status === "ABANDONED") flags.push({ code: "N", label: "N" });
 
-  const act = async (fn: () => Promise<void>) => { setBusy(true); try { await fn(); await refetch(); router.refresh(); } finally { setBusy(false); } };
+  // local first: the clock changes at once on this device, the server is told in the background (retrying while offline)
+  const act = (fn: () => Promise<unknown>, patch?: Partial<RaceState>) => {
+    if (patch) setLocal(patch);
+    setBusy(true);
+    sendWithRetry(fn, setWaiting).then(() => { release(); refetch(); }).catch(() => {}).finally(() => setBusy(false));
+  };
+  const begin = (mode: string) => {
+    unlockAudio();
+    const s = computeStart(mode === "+1" ? "" : mode, seq, now, mode === "+1" ? 1 : 0);
+    act(() => startSequence(race.id, mode, seq, prep, s), { status: "SEQUENCE", startAt: s, sequence: seq, prepFlag: prep, note: null });
+  };
+  const sig = (k: "AP" | "X1" | "N" | "FINISH" | "RESET") => act(() => signal(race.id, k),
+    k === "AP" || k === "X1" ? { status: "PLANNED", startAt: null, note: k } : k === "N" ? { status: "ABANDONED", note: "N" } : k === "FINISH" ? { status: "FINISHED" } : { status: "PLANNED", startAt: null, note: null });
   const clock = new Intl.DateTimeFormat(intl, { timeZone: "Europe/Zurich", hour: "2-digit", minute: "2-digit", second: "2-digit" }).format(now);
   const kindLabel = (k: string) => (k === "attention" ? t.race.orange : t.race.signals[k as "warning"]);
   const flagName = (code: string) => (code === "CLASS" ? className : code === "ORANGE" ? t.race.orange : code === "BLACK" ? t.race.black : code);
@@ -69,7 +80,7 @@ export function RaceClock({ initial, className, official = false }: { initial: R
   const minLabel = (m: number) => (m === 0 ? t.race.signals.start : `−${m} min`);
   const prepSig = sigs.find((s) => s.kind === "prep");
   const prepChangeable = official && race.status === "SEQUENCE" && !!prepSig && now < prepSig.at - 3000;
-  const changePrep = (f: string) => { setPrep(f); act(() => setPrepFlag(race.id, f)); };
+  const changePrep = (f: string) => { setPrep(f); act(() => setPrepFlag(race.id, f), { prepFlag: f }); };
   const devOff = sync ? -sync.offset / 1000 : 0;
 
   return (
@@ -82,11 +93,12 @@ export function RaceClock({ initial, className, official = false }: { initial: R
           {sync ? `${t.race.clockSync} ±${sync.precision} ms` : "…"}
           {sync && Math.abs(devOff) >= 0.05 && <span className="ml-1 opacity-80">· {(devOff > 0 ? t.race.deviceAhead : t.race.deviceBehind).replace("{s}", Math.abs(devOff).toFixed(1))}</span>}
         </span>
+        {waiting && <span className="w-full rounded-full bg-white px-3 py-1 text-center text-xs font-semibold">{t.race.offlineQueued}</span>}
       </div>}
 
       <div className="text-center">
         {startAt && live
-          ? <div className="font-mono text-6xl font-bold tabular-nums min-[400px]:text-7xl sm:text-9xl" suppressHydrationWarning>{fmtCountdown(now - startAt)}</div>
+          ? <div className={`font-mono ${compact ? "text-6xl" : "text-6xl min-[400px]:text-7xl sm:text-9xl"} font-bold tabular-nums`} suppressHydrationWarning>{fmtCountdown(now - startAt)}</div>
           : <div className="py-6 text-3xl font-bold">{race.status === "FINISHED" ? "🏁 " : ""}{t.race.status[race.status as "PLANNED"]}</div>}
         {startAt && live && <div className="mt-1 text-sm text-ink/75">{now < startAt ? t.race.startIn : t.race.sinceStart} · {t.race.startAt} {new Intl.DateTimeFormat(intl, { timeZone: "Europe/Zurich", hour: "2-digit", minute: "2-digit", second: "2-digit" }).format(startAt)}</div>}
       </div>
@@ -167,11 +179,11 @@ export function RaceClock({ initial, className, official = false }: { initial: R
                   <label className="mb-1 block text-xs text-ink/75" htmlFor="startat">{t.race.startAt}</label>
                   <input id="startat" type="time" value={at} onChange={(e) => setAt(e.target.value)} className="rounded-lg border-2 border-ink bg-white px-3 py-2 text-ink" />
                 </div>
-                <button disabled={busy} className="rounded-lg bg-ink px-5 py-3 font-semibold uppercase text-paper hover:bg-ink/85" onClick={() => { unlockAudio(); act(() => startSequence(race.id, at, seq, prep)); }}>
+                <button disabled={busy} className="rounded-lg bg-ink px-5 py-3 font-semibold uppercase text-paper hover:bg-ink/85" onClick={() => begin(at)}>
                   ▶ {at ? t.race.startSequence : t.race.startNow}
                 </button>
                 {!at && (
-                  <button disabled={busy} className="rounded-lg border-2 border-ink bg-white px-5 py-3 font-semibold uppercase text-ink hover:bg-white/80" onClick={() => { unlockAudio(); act(() => startSequence(race.id, "+1", seq, prep)); }}>
+                  <button disabled={busy} className="rounded-lg border-2 border-ink bg-white px-5 py-3 font-semibold uppercase text-ink hover:bg-white/80" onClick={() => begin("+1")}>
                     ▶ {t.race.startPlus1}
                   </button>
                 )}
@@ -193,14 +205,14 @@ export function RaceClock({ initial, className, official = false }: { initial: R
           )}
           {live && (
             <div className="flex flex-wrap justify-center gap-2">
-              {now < (startAt ?? 0) && <button disabled={busy} className="rounded-lg bg-white/45 px-3 py-2 font-semibold hover:bg-white/70" onClick={() => act(() => signal(race.id, "AP"))}>{t.race.postpone}</button>}
-              {now >= (startAt ?? 0) && now < (startAt ?? 0) + 4 * 60e3 && <button disabled={busy} className="rounded-lg bg-white px-3 py-2 font-semibold text-ink ring-2 ring-ink hover:bg-white/80" onClick={() => act(() => signal(race.id, "X1"))}>{t.race.generalRecall}</button>}
-              <button disabled={busy} className="rounded-lg bg-white/45 px-3 py-2 font-semibold hover:bg-white/70" onClick={() => act(() => signal(race.id, "N"))}>{t.race.abandon}</button>
-              {now >= (startAt ?? 0) && <button disabled={busy} className="rounded-lg bg-ink px-3 py-2 font-semibold text-paper hover:bg-ink/85" onClick={() => act(() => signal(race.id, "FINISH"))}>🏁 {t.race.finishRace}</button>}
+              {now < (startAt ?? 0) && <button disabled={busy} className="rounded-lg bg-white/45 px-3 py-2 font-semibold hover:bg-white/70" onClick={() => sig("AP")}>{t.race.postpone}</button>}
+              {now >= (startAt ?? 0) && now < (startAt ?? 0) + 4 * 60e3 && <button disabled={busy} className="rounded-lg bg-white px-3 py-2 font-semibold text-ink ring-2 ring-ink hover:bg-white/80" onClick={() => sig("X1")}>{t.race.generalRecall}</button>}
+              <button disabled={busy} className="rounded-lg bg-white/45 px-3 py-2 font-semibold hover:bg-white/70" onClick={() => sig("N")}>{t.race.abandon}</button>
+              {now >= (startAt ?? 0) && <button disabled={busy} className="rounded-lg bg-ink px-3 py-2 font-semibold text-paper hover:bg-ink/85" onClick={() => sig("FINISH")}>🏁 {t.race.finishRace}</button>}
             </div>
           )}
           {(race.status === "FINISHED" || race.status === "ABANDONED") && (
-            <div className="flex justify-center"><button disabled={busy} className="rounded-lg bg-white/45 px-3 py-2 text-xs hover:bg-white/70" onClick={() => { if (confirm(`${t.race.reset}?`)) act(() => signal(race.id, "RESET")); }}>{t.race.reset}</button></div>
+            <div className="flex justify-center"><button disabled={busy} className="rounded-lg bg-white/45 px-3 py-2 text-xs hover:bg-white/70" onClick={() => { if (confirm(`${t.race.reset}?`)) sig("RESET"); }}>{t.race.reset}</button></div>
           )}
         </div>
       )}

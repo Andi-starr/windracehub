@@ -39,10 +39,10 @@ export default async function RacePage({ params }: { params: Promise<{ id: strin
 
       <RaceClock initial={initial} className={className} official />
 
-      {race.startAt && (
+      {(
         <section className="card">
           <h2 className="h2">{t.race.finishes}</h2>
-          <FinishRecorder raceId={race.id} startAt={race.startAt.getTime()} entries={entries}
+          <FinishRecorder raceId={race.id} startAt={race.startAt?.getTime() ?? null} status={race.status} entries={entries}
             finishes={race.finishes.map((f) => ({ entryId: f.entryId, finishedAt: f.finishedAt?.toISOString() ?? null, position: f.position, code: f.code }))} />
         </section>
       )}

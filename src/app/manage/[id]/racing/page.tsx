@@ -14,9 +14,9 @@ const zurichDay = (d: Date) => new Intl.DateTimeFormat("en-CA", { timeZone: "Eur
 const ACTIVE = ["PLANNED", "SEQUENCE", "RUNNING"];
 
 /** Race-day mode: a focused full-screen workspace that covers the normal site until "Done racing". */
-export default async function RacingPage({ params, searchParams }: { params: Promise<{ id: string }>; searchParams: Promise<{ race?: string }> }) {
+export default async function RacingPage({ params, searchParams }: { params: Promise<{ id: string }>; searchParams: Promise<{ race?: string; race2?: string }> }) {
   const { id } = await params;
-  const { race: pick } = await searchParams;
+  const { race: pick, race2: pick2 } = await searchParams;
   const { role } = await requireEventRole(id, "HELPER");
   const { t } = await getT();
   const e = await db.event.findUnique({
@@ -37,7 +37,14 @@ export default async function RacingPage({ params, searchParams }: { params: Pro
     todays.find((r) => r.status === "SEQUENCE" || r.status === "RUNNING") ??
     todays.find((r) => r.status === "PLANNED") ??
     todays[todays.length - 1];
-  const entries = race ? await db.entry.findMany({ where: { eventId: id, classId: race.classId }, orderBy: { sailNumber: "asc" } }) : [];
+  // split screen: a second race next to the first one (two starts at the same time)
+  const race2 = pick2 && pick2 !== race?.id ? e.races.find((r) => r.id === pick2) : undefined;
+  const shown = [race, race2].filter((r): r is NonNullable<typeof r> => !!r);
+  const allEntries = shown.length ? await db.entry.findMany({ where: { eventId: id, classId: { in: shown.map((r) => r.classId).filter((c): c is string => !!c) } }, orderBy: { sailNumber: "asc" } }) : [];
+  const noClassEntries = shown.some((r) => !r.classId) ? await db.entry.findMany({ where: { eventId: id }, orderBy: { sailNumber: "asc" } }) : [];
+  const entriesFor = (r: { classId: string | null }) => (r.classId ? allEntries.filter((x) => x.classId === r.classId) : noClassEntries);
+  const split = !!race2;
+  const q = (a?: string, b?: string) => `/manage/${id}/racing?${a ? `race=${a}` : ""}${b ? `&race2=${b}` : ""}`;
   const over = !race || race.status === "FINISHED" || race.status === "ABANDONED";
 
   // one "next race" button per class (or one for the whole fleet when the event has no classes)
@@ -46,12 +53,16 @@ export default async function RacingPage({ params, searchParams }: { params: Pro
   const raceLabel = (r: { eventClass: { name: string } | null; number: number }) => `${r.eventClass?.name ?? t.common.all} · ${r.number}`;
   const raced = groups.filter((g) => todays.some((r) => (r.classId ?? "") === g.id && r.status === "FINISHED"));
 
+  // a race still in its sequence or sailing stays on screen when the next one is created
+  const live = (r?: { status: string }) => !!r && (r.status === "SEQUENCE" || r.status === "RUNNING");
+  const keepId = live(race2) ? race2!.id : live(race) ? race!.id : "";
   const NextButtons = ({ big }: { big?: boolean }) => (
     <div className={`grid gap-2 ${big ? "sm:grid-cols-2" : "grid-cols-2 sm:grid-cols-4"}`}>
       {groups.map((g) => (
         <form key={g.id} action={addRace.bind(null, id)}>
           <input type="hidden" name="classId" value={g.id} />
           <input type="hidden" name="to" value="racing" />
+          {keepId && <input type="hidden" name="keep" value={keepId} />}
           <button className={`w-full ${big ? "btn py-4 text-base" : "btn-ghost"}`}>+ {g.name} · {t.race.title} {nextNo(g.id)}</button>
         </form>
       ))}
@@ -68,15 +79,21 @@ export default async function RacingPage({ params, searchParams }: { params: Pro
         <a href="#done" className="flex items-center bg-ink px-4 text-sm font-semibold uppercase tracking-wide text-paper hover:bg-accent">{t.racing.done} ✓</a>
       </div>
 
-      <div className="mx-auto max-w-4xl space-y-4 p-4">
+      <div className={`mx-auto space-y-4 p-4 ${split ? "max-w-7xl" : "max-w-4xl"}`}>
         {todays.length > 0 && (
           <nav className="-mx-4 flex gap-2 overflow-x-auto px-4 pb-1" aria-label={t.racing.today}>
-            {todays.map((r) => (
-              <Link key={r.id} href={`/manage/${id}/racing?race=${r.id}`}
-                className={`shrink-0 border px-3 py-2 text-xs font-semibold uppercase ${r.id === race?.id ? "border-ink bg-ink text-paper" : "border-ink/25 bg-white"}`}>
-                {raceLabel(r)} <span className="font-normal opacity-70">· {t.race.status[r.status]}</span>
-              </Link>
-            ))}
+            {todays.map((r) => {
+              const on = r.id === race?.id || r.id === race2?.id;
+              return (
+                <span key={r.id} className={`flex shrink-0 border text-xs font-semibold uppercase ${on ? "border-ink bg-ink text-paper" : "border-ink/25 bg-white"}`}>
+                  <Link href={q(r.id, race2 && r.id !== race2.id ? race2.id : undefined)} className="px-3 py-2">
+                    {raceLabel(r)} <span className="font-normal opacity-70">· {t.race.status[r.status]}</span>
+                  </Link>
+                  {!on && race && <Link href={q(race.id, r.id)} title={t.racing.split} className="border-l border-ink/25 px-2 py-2">⧉</Link>}
+                  {r.id === race2?.id && <Link href={q(race!.id)} title={t.racing.unsplit} className="border-l border-paper/40 px-2 py-2">✕</Link>}
+                </span>
+              );
+            })}
           </nav>
         )}
 
@@ -89,21 +106,29 @@ export default async function RacingPage({ params, searchParams }: { params: Pro
 
         {race && (
           <>
-            <h1 className="text-2xl font-semibold uppercase tracking-tight">{race.eventClass?.name ?? e.title} · {t.race.title} {race.number}</h1>
-            <RaceClock key={race.id} className={race.eventClass?.name ?? e.title} official
-              initial={{ id: race.id, status: race.status, startAt: race.startAt?.getTime() ?? null, sequence: race.sequence, prepFlag: race.prepFlag, note: race.note, updatedAt: race.updatedAt.getTime() }} />
-            {race.startAt && (
-              <section className="card">
-                <h2 className="h2">{t.race.finishes}</h2>
-                {entries.length === 0
-                  ? <p className="text-sm text-ink/60">{t.racing.noEntries}</p>
-                  : <FinishRecorder key={race.id} raceId={race.id} startAt={race.startAt.getTime()} entries={entries}
-                      finishes={race.finishes.map((f) => ({ entryId: f.entryId, finishedAt: f.finishedAt?.toISOString() ?? null, position: f.position, code: f.code }))} />}
-              </section>
-            )}
+            <div className={split ? "grid gap-4 lg:grid-cols-2" : ""}>
+              {shown.map((r) => {
+                const list = entriesFor(r);
+                return (
+                  <div key={r.id} className="min-w-0 space-y-4">
+                    <h1 className={`${split ? "text-xl" : "text-2xl"} font-semibold uppercase tracking-tight`}>{r.eventClass?.name ?? e.title} · {t.race.title} {r.number}</h1>
+                    <RaceClock key={r.id} className={r.eventClass?.name ?? e.title} official compact={split}
+                      initial={{ id: r.id, status: r.status, startAt: r.startAt?.getTime() ?? null, sequence: r.sequence, prepFlag: r.prepFlag, note: r.note, updatedAt: r.updatedAt.getTime() }} />
+                    <section className="card">
+                      <h2 className="h2">{t.race.finishes}</h2>
+                      {list.length === 0
+                        ? <p className="text-sm text-ink/60">{t.racing.noEntries}</p>
+                        : <FinishRecorder key={r.id} raceId={r.id} startAt={r.startAt?.getTime() ?? null} status={r.status} entries={list}
+                            finishes={r.finishes.map((f) => ({ entryId: f.entryId, finishedAt: f.finishedAt?.toISOString() ?? null, position: f.position, code: f.code }))} />}
+                    </section>
+                  </div>
+                );
+              })}
+            </div>
             <section className={over ? "card space-y-3 border-2 border-accent" : "space-y-2"}>
               <p className={over ? "text-sm font-semibold" : "text-[11px] font-semibold uppercase tracking-wide text-ink/60"}>{over ? t.racing.raceOver : t.racing.next}</p>
               <NextButtons big={over} />
+              {!split && todays.length > 1 && <p className="text-xs text-ink/60">{t.racing.splitHint}</p>}
             </section>
           </>
         )}
