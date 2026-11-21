@@ -85,7 +85,7 @@ export function RaceClock({ initial, className, official = false }: { initial: R
 
       <div className="text-center">
         {startAt && live
-          ? <div className="font-mono text-7xl font-bold tabular-nums sm:text-8xl">{fmtCountdown(now - startAt)}</div>
+          ? <div className="font-mono text-7xl font-bold tabular-nums sm:text-8xl" suppressHydrationWarning>{fmtCountdown(now - startAt)}</div>
           : <div className="py-6 text-3xl font-bold">{race.status === "FINISHED" ? "🏁 " : ""}{t.race.status[race.status as "PLANNED"]}</div>}
         {startAt && live && <div className="mt-1 text-sm text-sea-200">{now < startAt ? t.race.startIn : t.race.sinceStart} · {t.race.startAt} {new Intl.DateTimeFormat(intl, { timeZone: "Europe/Zurich", hour: "2-digit", minute: "2-digit", second: "2-digit" }).format(startAt)}</div>}
       </div>
@@ -101,7 +101,7 @@ export function RaceClock({ initial, className, official = false }: { initial: R
             {(() => { const f = flagFor(next.kind, race.prepFlag); return <span className="flex items-center gap-2"><Flag code={f.code} label={flagName(f.code)} size={44} /><span className="font-bold">{flagName(f.code)} {f.up ? "↑" : "↓"}</span></span>; })()}
             {next.kind !== "attention" && <span className="text-lg font-semibold">{kindLabel(next.kind)}</span>}
             <span className="text-sm text-sea-200">{minLabel(next.min)} · {hhmm(next.at)}</span>
-            <span className="font-mono text-lg tabular-nums">{fmtCountdown(now - next.at).slice(1, 6)}</span>
+            <span className="font-mono text-lg tabular-nums" suppressHydrationWarning>{fmtCountdown(now - next.at).slice(1, 6)}</span>
           </div>
         </div>
       )}
