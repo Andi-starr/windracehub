@@ -7,6 +7,9 @@ const SB_URL = process.env.SUPABASE_URL;
 const SB_KEY = process.env.SUPABASE_SERVICE_ROLE_KEY;
 const BUCKET = process.env.SUPABASE_BUCKET || "files";
 const useSupabase = !!(SB_URL && SB_KEY);
+// New Supabase secret keys (sb_secret_…) go in the apikey header only; legacy service_role JWTs also as Bearer.
+const sbHeaders = (): Record<string, string> =>
+  SB_KEY!.startsWith("sb_") ? { apikey: SB_KEY! } : { apikey: SB_KEY!, Authorization: `Bearer ${SB_KEY}` };
 const LOCAL_DIR = path.join(process.cwd(), "uploads");
 
 export function makeKey(eventId: string, fileName: string) {
@@ -26,7 +29,7 @@ export async function signedUploadUrl(key: string): Promise<string> {
   if (!useSupabase) return `/api/upload/${key}?sig=${sign(key)}`;
   const res = await fetch(`${SB_URL}/storage/v1/object/upload/sign/${BUCKET}/${key}`, {
     method: "POST",
-    headers: { Authorization: `Bearer ${SB_KEY}`, apikey: SB_KEY! },
+    headers: sbHeaders(),
   });
   if (!res.ok) throw new Error(`Storage error ${res.status}: ${await res.text()}`);
   const { url } = (await res.json()) as { url: string };
@@ -54,6 +57,6 @@ export async function deleteFile(key: string) {
   if (!useSupabase) return; // local dev: keep files
   await fetch(`${SB_URL}/storage/v1/object/${BUCKET}/${key}`, {
     method: "DELETE",
-    headers: { Authorization: `Bearer ${SB_KEY}`, apikey: SB_KEY! },
+    headers: sbHeaders(),
   });
 }
