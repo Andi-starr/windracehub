@@ -30,17 +30,21 @@ export function InviteForm({ action, base }: { action: (s: ActionState, fd: Form
   const [state, run, pending] = useActionState(action, undefined);
   const [copied, setCopied] = useState(false);
   const link = state?.ok ? `${base}/invite/${state.ok}` : "";
+  const added = state?.ok === "";
   return (
     <div className="space-y-2">
       <form action={run} className="flex flex-col gap-2 sm:flex-row">
         <input name="email" type="email" required placeholder={t.common.email} className="input flex-1" />
         <select name="role" className="input sm:w-48" defaultValue="OFFICIAL">
           <option value="OFFICIAL">{t.manage.roleOfficial}</option>
+          <option value="HELPER">{t.manage.roleHelper}</option>
           <option value="HOST">{t.manage.roleHost}</option>
         </select>
         <button className="btn" disabled={pending}>{t.manage.invite}</button>
       </form>
+      <p className="text-xs text-slate-500">{t.manage.teamHint}</p>
       {state?.error && <p className="text-sm text-red-700">{state.error}</p>}
+      {added && <p className="text-sm text-emerald-700">{t.manage.memberAdded}</p>}
       {link && (
         <div className="rounded-lg bg-emerald-50 p-3 text-sm">
           <p className="mb-1 font-medium text-emerald-900">{t.manage.inviteCreated}</p>

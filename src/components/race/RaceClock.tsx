@@ -73,46 +73,47 @@ export function RaceClock({ initial, className, official = false }: { initial: R
   const devOff = sync ? -sync.offset / 1000 : 0;
 
   return (
-    <div ref={root} className="space-y-4 rounded-2xl bg-sea-900 p-5 text-white shadow-lg">
-      <div className="flex flex-wrap items-center justify-between gap-2 text-sm">
-        <span className="rounded-full bg-white/10 px-3 py-1">{t.race.status[race.status as "PLANNED"]}</span>
+    <div ref={root} className="space-y-4 border-2 border-ink bg-accent p-4 text-ink sm:p-5">
+      {/* spectators get a minimal view: countdown and the flags that are up; the committee sees the full plan */}
+      {official && <div className="flex flex-wrap items-center justify-between gap-2 text-sm">
+        <span className="rounded-full bg-white/45 px-3 py-1 font-semibold">{t.race.status[race.status as "PLANNED"]}</span>
         <span className="font-mono text-lg tabular-nums" suppressHydrationWarning>{clock}</span>
-        <span title={t.race.syncHow} className={`rounded-full px-3 py-1 text-xs ${sync ? "bg-emerald-500/20 text-emerald-200" : "bg-amber-500/20 text-amber-200"}`}>
+        <span title={t.race.syncHow} className={`rounded-full px-3 py-1 text-xs ${sync ? "bg-ink text-paper" : "bg-white/60 text-ink"}`}>
           {sync ? `${t.race.clockSync} ±${sync.precision} ms` : "…"}
           {sync && Math.abs(devOff) >= 0.05 && <span className="ml-1 opacity-80">· {(devOff > 0 ? t.race.deviceAhead : t.race.deviceBehind).replace("{s}", Math.abs(devOff).toFixed(1))}</span>}
         </span>
-      </div>
+      </div>}
 
       <div className="text-center">
         {startAt && live
-          ? <div className="font-mono text-5xl font-bold tabular-nums min-[400px]:text-6xl sm:text-8xl" suppressHydrationWarning>{fmtCountdown(now - startAt)}</div>
+          ? <div className="font-mono text-6xl font-bold tabular-nums min-[400px]:text-7xl sm:text-9xl" suppressHydrationWarning>{fmtCountdown(now - startAt)}</div>
           : <div className="py-6 text-3xl font-bold">{race.status === "FINISHED" ? "🏁 " : ""}{t.race.status[race.status as "PLANNED"]}</div>}
-        {startAt && live && <div className="mt-1 text-sm text-sea-200">{now < startAt ? t.race.startIn : t.race.sinceStart} · {t.race.startAt} {new Intl.DateTimeFormat(intl, { timeZone: "Europe/Zurich", hour: "2-digit", minute: "2-digit", second: "2-digit" }).format(startAt)}</div>}
+        {startAt && live && <div className="mt-1 text-sm text-ink/75">{now < startAt ? t.race.startIn : t.race.sinceStart} · {t.race.startAt} {new Intl.DateTimeFormat(intl, { timeZone: "Europe/Zurich", hour: "2-digit", minute: "2-digit", second: "2-digit" }).format(startAt)}</div>}
       </div>
 
       <div className="flex min-h-[60px] flex-wrap items-center justify-center gap-4">
-        {flags.map((f) => <div key={f.code} className="flex flex-col items-center gap-1"><Flag code={f.code} label={f.label} size={84} /><span className="text-xs text-sea-200">{f.label}</span></div>)}
+        {flags.map((f) => <div key={f.code} className="flex flex-col items-center gap-1"><Flag code={f.code} label={f.label} size={84} /><span className="text-xs text-ink/75">{f.label}</span></div>)}
       </div>
 
-      {next && live && (
-        <div className="rounded-xl bg-white/10 p-3 text-center">
-          <div className="text-xs uppercase tracking-wide text-sea-200">{t.race.nextSignal}</div>
+      {official && next && live && (
+        <div className="rounded-xl bg-white/60 p-3 text-center">
+          <div className="text-xs uppercase tracking-wide text-ink/75">{t.race.nextSignal}</div>
           <div className="mt-1 flex flex-wrap items-center justify-center gap-3">
             {(() => { const f = flagFor(next.kind, race.prepFlag); return <span className="flex items-center gap-2"><Flag code={f.code} label={flagName(f.code)} size={44} /><span className="font-bold">{flagName(f.code)} {f.up ? "↑" : "↓"}</span></span>; })()}
             {next.kind !== "attention" && <span className="text-lg font-semibold">{kindLabel(next.kind)}</span>}
-            <span className="text-sm text-sea-200">{minLabel(next.min)} · {hhmm(next.at)}</span>
+            <span className="text-sm text-ink/75">{minLabel(next.min)} · {hhmm(next.at)}</span>
             <span className="font-mono text-lg tabular-nums" suppressHydrationWarning>{fmtCountdown(now - next.at).slice(1, 6)}</span>
           </div>
         </div>
       )}
 
-      {startAt && (
+      {official && startAt && (
         <ol className={`grid grid-cols-2 gap-2 text-xs ${sigs.length > 4 ? "sm:grid-cols-5" : "sm:grid-cols-4"}`}>
           {sigs.map((s) => {
             const f = flagFor(s.kind, race.prepFlag);
             const done = s.at <= now && live;
             return (
-              <li key={s.at} className={`flex flex-col gap-1 rounded-lg px-2.5 py-2 ${done ? "bg-white/5 text-sea-200 opacity-60" : next?.at === s.at && live ? "bg-white/20 ring-1 ring-white/40" : "bg-white/10"}`}>
+              <li key={s.at} className={`flex flex-col gap-1 rounded-lg px-2.5 py-2 ${done ? "bg-white/20 opacity-50" : next?.at === s.at && live ? "bg-white ring-2 ring-ink" : "bg-white/45"}`}>
                 <div className="flex items-baseline justify-between gap-2">
                   <span className="text-base font-bold">{minLabel(s.min)}</span>
                   <span className="font-mono text-sm">{hhmm(s.at)}</span>
@@ -129,31 +130,31 @@ export function RaceClock({ initial, className, official = false }: { initial: R
       )}
 
       <div className="flex flex-wrap justify-center gap-2 text-sm">
-        <button className="rounded-lg bg-white/10 px-3 py-2 hover:bg-white/20" onClick={() => { unlockAudio(); if (!sound) beep(60, 1200); setSound(!sound); }}>{sound ? `🔊 ${t.race.sound}` : `🔇 ${t.race.soundOff}`}</button>
-        <button className="rounded-lg bg-white/10 px-3 py-2 hover:bg-white/20" onClick={() => root.current?.requestFullscreen?.()}>⛶ {t.race.fullscreen}</button>
+        <button className="rounded-lg bg-white/45 px-3 py-2 hover:bg-white/70" onClick={() => { unlockAudio(); if (!sound) beep(60, 1200); setSound(!sound); }}>{sound ? `🔊 ${t.race.sound}` : `🔇 ${t.race.soundOff}`}</button>
+        <button className="rounded-lg bg-white/45 px-3 py-2 hover:bg-white/70" onClick={() => root.current?.requestFullscreen?.()}>⛶ {t.race.fullscreen}</button>
       </div>
 
       {official && (
-        <div className="space-y-3 border-t border-white/10 pt-4">
+        <div className="space-y-3 border-t border-ink/25 pt-4">
           {!live && race.status !== "FINISHED" && (
             <div className="space-y-4">
               <div>
-                <div className="mb-2 text-xs uppercase tracking-wide text-sea-200">{t.race.sequence}</div>
+                <div className="mb-2 text-xs uppercase tracking-wide text-ink/75">{t.race.sequence}</div>
                 <div className="grid grid-cols-2 gap-2 sm:grid-cols-4">
                   {SEQS.map((q) => (
                     <button key={q} type="button" aria-pressed={seq === q} onClick={() => setSeq(q)}
-                      className={`rounded-lg px-3 py-2 text-left text-sm ${seq === q ? "bg-white font-semibold text-sea-900" : "bg-white/10 hover:bg-white/20"}`}>
+                      className={`rounded-lg px-3 py-2 text-left text-sm ${seq === q ? "bg-ink font-semibold text-paper" : "bg-white/45 hover:bg-white/70"}`}>
                       {t.race.sequences[q]}
                     </button>
                   ))}
                 </div>
               </div>
               <div>
-                <div className="mb-2 text-xs uppercase tracking-wide text-sea-200">{t.race.prepFlag}</div>
+                <div className="mb-2 text-xs uppercase tracking-wide text-ink/75">{t.race.prepFlag}</div>
                 <div className="grid grid-cols-3 gap-2 sm:grid-cols-5">
                   {PREP.map((f) => (
                     <button key={f} type="button" aria-pressed={prep === f} onClick={() => setPrep(f)}
-                      className={`flex flex-col items-center gap-1 rounded-lg px-2 py-2 text-sm ${prep === f ? "bg-white font-semibold text-sea-900" : "bg-white/10 hover:bg-white/20"}`}>
+                      className={`flex flex-col items-center gap-1 rounded-lg px-2 py-2 text-sm ${prep === f ? "bg-ink font-semibold text-paper" : "bg-white/45 hover:bg-white/70"}`}>
                       <Flag code={f} label={flagName(f)} size={40} />
                       <span>{flagName(f)}</span>
                       {PREP_RULE[f] && <span className="text-[10px] opacity-70">{PREP_RULE[f]}</span>}
@@ -163,22 +164,27 @@ export function RaceClock({ initial, className, official = false }: { initial: R
               </div>
               <div className="flex flex-wrap items-end justify-center gap-2">
                 <div>
-                  <label className="mb-1 block text-xs text-sea-200" htmlFor="startat">{t.race.startAt}</label>
-                  <input id="startat" type="time" value={at} onChange={(e) => setAt(e.target.value)} className="rounded-lg bg-white px-3 py-2 text-slate-900" />
+                  <label className="mb-1 block text-xs text-ink/75" htmlFor="startat">{t.race.startAt}</label>
+                  <input id="startat" type="time" value={at} onChange={(e) => setAt(e.target.value)} className="rounded-lg border-2 border-ink bg-white px-3 py-2 text-ink" />
                 </div>
-                <button disabled={busy} className="rounded-lg bg-emerald-500 px-4 py-2 font-semibold hover:bg-emerald-600" onClick={() => { unlockAudio(); act(() => startSequence(race.id, at, seq, prep)); }}>
+                <button disabled={busy} className="rounded-lg bg-ink px-5 py-3 font-semibold uppercase text-paper hover:bg-ink/85" onClick={() => { unlockAudio(); act(() => startSequence(race.id, at, seq, prep)); }}>
                   ▶ {at ? t.race.startSequence : t.race.startNow}
                 </button>
+                {!at && (
+                  <button disabled={busy} className="rounded-lg border-2 border-ink bg-white px-5 py-3 font-semibold uppercase text-ink hover:bg-white/80" onClick={() => { unlockAudio(); act(() => startSequence(race.id, "+1", seq, prep)); }}>
+                    ▶ {t.race.startPlus1}
+                  </button>
+                )}
               </div>
             </div>
           )}
           {prepChangeable && (
             <div className="text-center">
-              <div className="mb-2 text-xs text-sea-200">{t.race.prepFlag} · {t.race.prepChangeHint}</div>
+              <div className="mb-2 text-xs text-ink/75">{t.race.prepFlag} · {t.race.prepChangeHint}</div>
               <div className="flex flex-wrap justify-center gap-2">
                 {PREP.map((f) => (
                   <button key={f} type="button" disabled={busy} aria-pressed={race.prepFlag === f} onClick={() => changePrep(f)}
-                    className={`flex items-center gap-2 rounded-lg px-2 py-1.5 text-sm ${race.prepFlag === f ? "bg-white font-semibold text-sea-900" : "bg-white/10 hover:bg-white/20"}`}>
+                    className={`flex items-center gap-2 rounded-lg px-2 py-1.5 text-sm ${race.prepFlag === f ? "bg-ink font-semibold text-paper" : "bg-white/45 hover:bg-white/70"}`}>
                     <Flag code={f} label={flagName(f)} size={28} />{flagName(f)}
                   </button>
                 ))}
@@ -187,14 +193,14 @@ export function RaceClock({ initial, className, official = false }: { initial: R
           )}
           {live && (
             <div className="flex flex-wrap justify-center gap-2">
-              {now < (startAt ?? 0) && <button disabled={busy} className="rounded-lg bg-white/15 px-3 py-2 hover:bg-white/25" onClick={() => act(() => signal(race.id, "AP"))}>{t.race.postpone}</button>}
-              {now >= (startAt ?? 0) && now < (startAt ?? 0) + 4 * 60e3 && <button disabled={busy} className="rounded-lg bg-amber-500 px-3 py-2 font-semibold text-slate-900 hover:bg-amber-400" onClick={() => act(() => signal(race.id, "X1"))}>{t.race.generalRecall}</button>}
-              <button disabled={busy} className="rounded-lg bg-white/15 px-3 py-2 hover:bg-white/25" onClick={() => act(() => signal(race.id, "N"))}>{t.race.abandon}</button>
-              {now >= (startAt ?? 0) && <button disabled={busy} className="rounded-lg bg-white px-3 py-2 font-semibold text-sea-900 hover:bg-sea-100" onClick={() => act(() => signal(race.id, "FINISH"))}>🏁 {t.race.finishRace}</button>}
+              {now < (startAt ?? 0) && <button disabled={busy} className="rounded-lg bg-white/45 px-3 py-2 font-semibold hover:bg-white/70" onClick={() => act(() => signal(race.id, "AP"))}>{t.race.postpone}</button>}
+              {now >= (startAt ?? 0) && now < (startAt ?? 0) + 4 * 60e3 && <button disabled={busy} className="rounded-lg bg-white px-3 py-2 font-semibold text-ink ring-2 ring-ink hover:bg-white/80" onClick={() => act(() => signal(race.id, "X1"))}>{t.race.generalRecall}</button>}
+              <button disabled={busy} className="rounded-lg bg-white/45 px-3 py-2 font-semibold hover:bg-white/70" onClick={() => act(() => signal(race.id, "N"))}>{t.race.abandon}</button>
+              {now >= (startAt ?? 0) && <button disabled={busy} className="rounded-lg bg-ink px-3 py-2 font-semibold text-paper hover:bg-ink/85" onClick={() => act(() => signal(race.id, "FINISH"))}>🏁 {t.race.finishRace}</button>}
             </div>
           )}
           {(race.status === "FINISHED" || race.status === "ABANDONED") && (
-            <div className="flex justify-center"><button disabled={busy} className="rounded-lg bg-white/15 px-3 py-2 text-xs hover:bg-white/25" onClick={() => { if (confirm(`${t.race.reset}?`)) act(() => signal(race.id, "RESET")); }}>{t.race.reset}</button></div>
+            <div className="flex justify-center"><button disabled={busy} className="rounded-lg bg-white/45 px-3 py-2 text-xs hover:bg-white/70" onClick={() => { if (confirm(`${t.race.reset}?`)) act(() => signal(race.id, "RESET")); }}>{t.race.reset}</button></div>
           )}
         </div>
       )}

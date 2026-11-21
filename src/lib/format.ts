@@ -55,4 +55,9 @@ export function slugify(s: string) {
   return s.normalize("NFKD").replace(/[̀-ͯ]/g, "").toLowerCase().replace(/[^a-z0-9]+/g, "-").replace(/^-|-$/g, "").slice(0, 60);
 }
 
-export const DOC_TYPE_KEYS = ["NOR", "SI", "AMENDMENT", "NOTICE", "PROTEST", "OTHER"] as const;
+export const DOC_TYPE_KEYS = ["NOR", "SI", "SCHEDULE", "AMENDMENT", "NOTICE", "PROTEST", "OTHER"] as const;
+
+/** Online entry is possible: switched on, published, and before the closing time (Meldeschluss) if one is set. */
+export function entriesAreOpen(e: { entriesOpen: boolean; status: string; entriesCloseAt: Date | null }, now = new Date()) {
+  return e.entriesOpen && e.status === "PUBLISHED" && (!e.entriesCloseAt || now < e.entriesCloseAt);
+}

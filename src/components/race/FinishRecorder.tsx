@@ -37,7 +37,7 @@ export function FinishRecorder({ raceId, startAt, entries, finishes }: { raceId:
         <p className="mb-2 text-sm text-slate-600">{t.race.tapToFinish}</p>
         <div className="grid grid-cols-3 gap-2 sm:grid-cols-5">
           {entries.filter((e) => !done.has(e.id)).map((e) => (
-            <button key={e.id} onClick={() => tap(e.id)} className="rounded-xl border-2 border-sea-500 bg-white px-2 py-4 text-center font-bold text-sea-900 shadow-sm active:scale-95 active:bg-sea-100">
+            <button key={e.id} onClick={() => tap(e.id)} className="rounded-xl border-2 border-ink bg-white px-2 py-4 text-center text-lg font-bold text-ink active:scale-95 active:bg-accent">
               <span className="block text-lg">{e.sailNumber}</span>
               <span className="block truncate text-xs font-normal text-slate-500">{e.skipper ?? e.boatName}</span>
             </button>

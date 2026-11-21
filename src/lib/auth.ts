@@ -57,13 +57,15 @@ export async function requireUser() {
   return u;
 }
 
-/** Returns the user's role for the event, or throws/redirects if none. Admins count as HOST. */
+/** Returns the user's role for the event, or throws/redirects if none. Admins count as HOST.
+ *  "ANY" = host or race committee; "HELPER" also lets helpers in (race clock + finishes only). */
 export async function requireEventRole(eventId: string, need: Role | "ANY" = "ANY") {
   const user = await requireUser();
   if (user.role === "ADMIN") return { user, role: "HOST" as Role };
   const r = await db.eventRole.findUnique({ where: { userId_eventId: { userId: user.id, eventId } } });
   if (!r) redirect("/manage");
   if (need === "HOST" && r.role !== "HOST") redirect(`/manage/${eventId}`);
+  if (need === "ANY" && r.role === "HELPER") redirect(`/manage/${eventId}`);
   return { user, role: r.role };
 }
 

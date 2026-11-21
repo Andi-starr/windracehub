@@ -79,7 +79,8 @@ model Event {
   entryUrl     String?
   contactEmail String?
   status       EventStatus    @default(DRAFT)
-  entriesOpen  Boolean        @default(false)
+  entriesOpen  Boolean        @default(true)
+  entriesCloseAt DateTime?    // Meldeschluss: online entry closes automatically after this
   discards     String?        // e.g. "4:1,8:2" = 1 discard from 4 races, 2 from 8
   sourceUrl    String?
   createdAt    DateTime       @default(now())
@@ -117,6 +118,7 @@ model ScheduleItem {
 
 enum DocType {
   NOR
+  SCHEDULE
   SI
   AMENDMENT
   NOTICE
@@ -214,6 +216,7 @@ model Finish {
 enum Role {
   HOST
   OFFICIAL
+  HELPER // e.g. a participant account helping at the start/finish: race clock + finishes only
 }
 
 model EventRole {

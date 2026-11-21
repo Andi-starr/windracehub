@@ -3,7 +3,7 @@ const en: Dict = {
   meta: { description: "Sailing regattas in Switzerland: notices of race, sailing instructions, notices, entries, start sequence and results in one place." },
   nav: { classes: "Classes", host: "Host a regatta", clubs: "Clubs", regattas: "Regattas", myEvents: "My events", myEntries: "My entries", admin: "Admin", login: "Login", logout: "Log out" },
   footer: "windracehub · Regattas in Switzerland",
-  roles: { ADMIN: "Admin", HOST: "Host", PARTICIPANT: "Participant", OFFICIAL: "Race committee" },
+  roles: { ADMIN: "Admin", HOST: "Host", PARTICIPANT: "Participant", HELPER: "Helper", OFFICIAL: "Race committee" },
   status: { DRAFT: "Draft", PUBLISHED: "Public", CANCELLED: "Cancelled", draftHidden: "Draft, not public" },
   common: {
     save: "Save", saved: "Saved.", delete: "Delete", remove: "Remove", add: "Add", cancel: "Cancel",
@@ -42,8 +42,9 @@ const en: Dict = {
     sailNo: "Sail no.", boat: "Boat", skipper: "Helm", crew: "Crew",
     entryLabel: "Entry", contact: "Contact", originally: "Originally on", liveStart: "Live start clock",
   },
-  docTypes: { NOR: "Notice of race (NoR)", SI: "Sailing instructions (SI)", AMENDMENT: "Amendment", NOTICE: "Notice", PROTEST: "Protest / decision", OTHER: "Other" },
+  docTypes: { SCHEDULE: "Schedule", NOR: "Notice of race (NoR)", SI: "Sailing instructions (SI)", AMENDMENT: "Amendment", NOTICE: "Notice", PROTEST: "Protest / decision", OTHER: "Other" },
   auth: {
+    inviteOtherEmail: "This invitation is for {email}. Log out and log in with that address.",
     loginTitle: "Login", password: "Password", login: "Log in", noAccount: "No account yet?", register: "Sign up",
     registerTitle: "Create account", registerIntro: "For sailors, clubs and race committees.", createAccount: "Create account",
     wrong: "Wrong email or password.", badEmail: "Please enter a valid email.", noName: "Please enter your name.",
@@ -52,6 +53,7 @@ const en: Dict = {
     pleaseLogin: "Please log in.", setPw: "Choose a password to get started.", loginAccept: "Log in & accept", createAccept: "Create account & accept",
   },
   manage: {
+    tileOpen: "Edit +", tileClose: "Close −", tileNone: "nothing yet", tileDocs: "{n} published", tileProgram: "Schedule", tileProgramHint: "Upload the schedule as a document or draft it with Claude. It shows on the public page under Schedule.", tileEntriesOpen: "Entry open", tileEntriesDraft: "Entry opens when you publish", tileEntriesShut: "Entry closed", tileUntil: "until {d}", tileTeam: "{n} in the team", tileInvited: "{n} invited", tileRaces: "{n} races", tileResults: "{n} result lists", tileComplete: "complete", tileMissing: "missing: {f}", tileLater: "Races, start clock and results appear here 14 days before the start.", tileShowNow: "Set up now", tileDanger: "Cancel / delete", helperIntro: "As a helper you can run the start clock and record finishes.",
     hello: "Hello", adminSees: "Admin: you see all regattas.", yours: "Your regattas.", newEvent: "+ New regatta",
     empty: "No regattas yet. Create the first one with + New regatta, or ask a host to invite you.",
     upcoming: "Upcoming", past: "Past", noClub: "no club", documents: "documents", copyNextYear: "Copy for next year",
@@ -67,7 +69,7 @@ const en: Dict = {
     uncancel: "Undo cancellation", deleteForever: "Delete permanently", deleteQ: "Permanently delete this regatta with all documents and results?",
     entriesOpen: "Online entry open", entriesOpenHint: "Participants can enter themselves on the event page.",
     entriesTitle: "Entry list", entriesPasteHint: "Columns: class, sail no., boat, helm, club. Copy straight from Excel. Replaces all entries not made online.",
-    entriesSave: "Save entry list", entriesSaved: "entries saved.", entriesUnreadable: "Could not read the list.", onlineEntries: "entered online",
+    scheduleLegacy: "Upload the schedule as a document above (type “Schedule”) or draft it with Claude. These older items are still shown.", addEntry: "Add an entry by hand", roleHelper: "Helper (start clock & finishes)", teamHint: "Existing accounts (participants too) are added right away; new emails get an invite link.", memberAdded: "Account added to the team right away.", entriesSave: "Save entry list", entriesSaved: "entries saved.", entriesUnreadable: "Could not read the list.", onlineEntries: "entered online",
     handicap: "Yardstick",
     newTitle: "New regatta", copyTitle: "Copy regatta",
     newIntro: "Only name and date are required. The regatta stays a draft until you publish it.",
@@ -75,6 +77,8 @@ const en: Dict = {
     create: "Create regatta", racesTitle: "Races & start clock", discards: "Discards", discardsHint: "e.g. 4:1,8:2 = 1 discard from 4 races, 2 from 8",
   },
   form: {
+    errClub: "Please pick a registered club. If yours is missing, ask the admin.", clubSearch: "Search club…", clubNew: "New club (admin only)",
+    dates: "Dates *", datesHint: "tap start and end, or type e.g. 15.–16.5.2027", datesPh: "DD.MM.YYYY – DD.MM.YYYY", datesBad: "Date not recognised, e.g. 15.5.2027 or 15.–16.5.2027", pickStart: "Pick the first day", pickEnd: "Pick the last day (same day = one day)",
     title: "Regatta name *", titlePh: "e.g. Autumn Regatta Thalwil", from: "From *", to: "To", toHint: "empty = one day",
     club: "Organising club", clubPh: "Choose or type a club", venue: "Venue", venuePh: "e.g. Thalwil, Lake Zurich",
     classes: "Classes", classesHint: "comma separated", more: "More details", entryUrl: "External entry link",
@@ -89,6 +93,8 @@ const en: Dict = {
     noTable: "No table found in the file.", needInput: "Please choose a file or paste a table.", resDone: "Results published.", publishing: "Publishing…",
   },
   entry: {
+    closesAt: "Entry deadline",
+    hostNoEntry: "As a host of this regatta you can’t enter it yourself. You manage the entry list in the editor.", hostManage: "Go to entry list",
     title: "Enter", intro: "Enter your boat for this regatta.", closed: "Online entry is closed.", loginFirst: "Please log in or sign up to enter.",
     myBoat: "Saved boat", newBoat: "New boat", sailNo: "Sail number *", boatName: "Boat name", skipper: "Helm *", crew: "Crew",
     crewPh: "Names, comma separated", club: "Club", saveBoat: "Save boat for future entries", submit: "Submit entry",
@@ -109,11 +115,14 @@ const en: Dict = {
     mailWarnSubject: "Your windracehub account will be deleted", mailWarnBody: "Hello {name}\n\nyour windracehub account has not been used for a year and will be deleted automatically on {date}.\nTo keep it, just log in once before then: {url}\n\nwindracehub",
     mailHostSubject: "Your host login for windracehub", mailHostBody: "Hello {name}\n\na host login was created for you on windracehub. Set your password here (valid 14 days):\n{url}\n\nwindracehub",
   },
-  admin: { title: "Users & roles", intro: "Only hosts and admins can create regattas. Every new user starts as a participant.", role: "Role", since: "since", changed: "Role changed." },
+  admin: { testEvent: "Test regatta", testEventHint: "Creates a clearly marked practice regatta for today with ILCA 7 (26 boats) and 420 (22 boats) so you can try everything. Delete it afterwards.", testEventBtn: "Create test regatta", title: "Users & roles", intro: "Only hosts and admins can create regattas. Every new user starts as a participant.", role: "Role", since: "since", changed: "Role changed." },
+  racing: {
+    goRacing: "Let's go racing", goRacingHint: "Race-day mode: create a race, start it, record finishes, next. One after another.", today: "Today", next: "Next race", noRaces: "No race yet today. Create the first one:", raceOver: "Race finished. On to the next:", done: "Done racing", doneTitle: "Done for today?", donePublish: "Publish provisional results", doneHint: "You then go back to the normal site. Everything stays saved.", doneMsg: "Race day closed.", donePub: "{n} result lists published as provisional.", racesToday: "{n} today", back: "Back without closing", noEntries: "No entries in this class yet. Finishes need an entry list.",
+  },
   race: {
     title: "Race", races: "Races", add: "Add race", none: "No races yet.", number: "No.", sequence: "Start sequence", black: "Black", prepFlag: "Preparatory flag",
     status: { PLANNED: "Planned", SEQUENCE: "Start sequence running", RUNNING: "Racing", FINISHED: "Finished", ABANDONED: "Abandoned" },
-    startClock: "Start clock", startSequence: "Start sequence", startAt: "Start at", startIn: "Start in", startNow: "Now (next full minute)",
+    startClock: "Start clock", startSequence: "Start sequence", startAt: "Start at", startIn: "Start in", startPlus1: "+1 min to prepare", startNow: "Now (next full minute)",
     postpone: "Postpone (AP)", generalRecall: "General recall", abandon: "Abandon (N)", finishRace: "End race", reset: "Reset",
     signals: { warning: "Warning signal", prep: "Preparatory signal", prepDown: "Preparatory down", start: "Start", up: "up", down: "down" },
     deviceAhead: "Your device is {s} s ahead", deviceBehind: "Your device is {s} s behind", syncHow: "Measured against the server clock (NTP-synced): best of 6 samples, renewed every 60 s. ± = half the round trip of the best sample.", prepChangeHint: "Can be changed until the preparatory signal", orange: "Orange", classFlag: "Class flag",

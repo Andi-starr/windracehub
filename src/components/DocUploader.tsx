@@ -12,13 +12,14 @@ function guessType(name: string) {
   const n = name.toLowerCase();
   if (/\bnor\b|ausschreibung|notice.of.race/.test(n)) return "NOR";
   if (/\bsi\b|segelanweisung|sailing.instruction/.test(n)) return "SI";
+  if (/programm|schedule|zeitplan|horaire/.test(n)) return "SCHEDULE";
   if (/amend|änderung|aenderung/.test(n)) return "AMENDMENT";
   if (/protest|hearing|entscheid|decision|verhandlung/.test(n)) return "PROTEST";
   return "NOTICE";
 }
 const prettyTitle = (name: string) => name.replace(/\.[^.]+$/, "").replace(/[_-]+/g, " ").trim();
 
-export function DocUploader({ eventId }: { eventId: string }) {
+export function DocUploader({ eventId, defaultType }: { eventId: string; defaultType?: string }) {
   const [items, setItems] = useState<Item[]>([]);
   const [over, setOver] = useState(false);
   const input = useRef<HTMLInputElement>(null);
@@ -29,7 +30,7 @@ export function DocUploader({ eventId }: { eventId: string }) {
     if (!files) return;
     setItems((cur) => [
       ...cur.filter((i) => i.state !== "done"),
-      ...Array.from(files).map((file) => ({ file, type: guessType(file.name), title: prettyTitle(file.name), state: "ready" as const })),
+      ...Array.from(files).map((file) => ({ file, type: defaultType ?? guessType(file.name), title: prettyTitle(file.name), state: "ready" as const })),
     ]);
   };
   const patch = (idx: number, p: Partial<Item>) => setItems((cur) => cur.map((it, i) => (i === idx ? { ...it, ...p } : it)));

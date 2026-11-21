@@ -3,7 +3,7 @@ const fr: Dict = {
   meta: { description: "Régates en Suisse : avis de course, instructions de course, communiqués, inscriptions, procédure de départ et résultats au même endroit." },
   nav: { classes: "Classes", host: "Organiser une régate", clubs: "Clubs", regattas: "Régates", myEvents: "Mes événements", myEntries: "Mes inscriptions", admin: "Admin", login: "Connexion", logout: "Déconnexion" },
   footer: "windracehub · Régates en Suisse",
-  roles: { ADMIN: "Admin", HOST: "Organisateur", PARTICIPANT: "Participant", OFFICIAL: "Comité de course" },
+  roles: { ADMIN: "Admin", HOST: "Organisateur", PARTICIPANT: "Participant", HELPER: "Aide", OFFICIAL: "Comité de course" },
   status: { DRAFT: "Brouillon", PUBLISHED: "Public", CANCELLED: "Annulée", draftHidden: "Brouillon, non public" },
   common: {
     save: "Enregistrer", saved: "Enregistré.", delete: "Supprimer", remove: "Retirer", add: "Ajouter", cancel: "Annuler",
@@ -42,8 +42,9 @@ const fr: Dict = {
     sailNo: "N° de voile", boat: "Bateau", skipper: "Barreur·se", crew: "Équipage",
     entryLabel: "Inscription", contact: "Contact", originally: "Initialement sur", liveStart: "Chrono de départ en direct",
   },
-  docTypes: { NOR: "Avis de course (AC)", SI: "Instructions de course (IC)", AMENDMENT: "Modification", NOTICE: "Communiqué", PROTEST: "Réclamation / décision", OTHER: "Autre" },
+  docTypes: { SCHEDULE: "Programme", NOR: "Avis de course (AC)", SI: "Instructions de course (IC)", AMENDMENT: "Modification", NOTICE: "Communiqué", PROTEST: "Réclamation / décision", OTHER: "Autre" },
   auth: {
+    inviteOtherEmail: "Cette invitation est destinée à {email}. Déconnectez-vous et connectez-vous avec cette adresse.",
     loginTitle: "Connexion", password: "Mot de passe", login: "Se connecter", noAccount: "Pas encore de compte ?", register: "S'inscrire",
     registerTitle: "Créer un compte", registerIntro: "Pour les navigatrices et navigateurs, les clubs et les comités de course.", createAccount: "Créer un compte",
     wrong: "E-mail ou mot de passe incorrect.", badEmail: "Veuillez saisir un e-mail valide.", noName: "Veuillez saisir votre nom.",
@@ -52,6 +53,7 @@ const fr: Dict = {
     pleaseLogin: "Veuillez vous connecter.", setPw: "Choisissez un mot de passe pour commencer.", loginAccept: "Se connecter et accepter", createAccept: "Créer un compte et accepter",
   },
   manage: {
+    tileOpen: "Modifier +", tileClose: "Fermer −", tileNone: "rien encore", tileDocs: "{n} publiés", tileProgram: "Programme", tileProgramHint: "Publiez le programme comme document ou rédigez-le avec Claude. Il apparaît sur la page publique sous Programme.", tileEntriesOpen: "Inscriptions ouvertes", tileEntriesDraft: "Inscriptions ouvertes dès la publication", tileEntriesShut: "Inscriptions fermées", tileUntil: "jusqu’au {d}", tileTeam: "{n} dans l’équipe", tileInvited: "{n} invités", tileRaces: "{n} manches", tileResults: "{n} classements", tileComplete: "complet", tileMissing: "manque : {f}", tileLater: "Manches, chrono et résultats apparaissent ici 14 jours avant le départ.", tileShowNow: "Configurer maintenant", tileDanger: "Annuler / supprimer", helperIntro: "En tant qu’aide, vous pouvez utiliser le chrono de départ et saisir les arrivées.",
     hello: "Bonjour", adminSees: "Admin : vous voyez toutes les régates.", yours: "Vos régates.", newEvent: "+ Nouvelle régate",
     empty: "Aucune régate pour l'instant. Créez la première avec + Nouvelle régate, ou demandez à un organisateur de vous inviter.",
     upcoming: "À venir", past: "Passées", noClub: "sans club", documents: "documents", copyNextYear: "Copier pour l'année prochaine",
@@ -67,7 +69,7 @@ const fr: Dict = {
     uncancel: "Rétablir la régate", deleteForever: "Supprimer définitivement", deleteQ: "Supprimer définitivement la régate avec tous ses documents et résultats ?",
     entriesOpen: "Inscriptions en ligne ouvertes", entriesOpenHint: "Les participants peuvent s'inscrire eux-mêmes sur la page de l'événement.",
     entriesTitle: "Liste des inscrits", entriesPasteHint: "Colonnes : série, n° de voile, bateau, barreur·se, club. Copier directement depuis Excel. Remplace les inscriptions qui n'ont pas été faites en ligne.",
-    entriesSave: "Enregistrer la liste", entriesSaved: "inscriptions enregistrées.", entriesUnreadable: "Impossible de lire la liste.", onlineEntries: "inscrits en ligne",
+    scheduleLegacy: "Le programme se publie maintenant comme document ci-dessus (type « Programme ») ou se rédige avec Claude. Ces anciennes entrées restent affichées.", addEntry: "Ajouter une inscription manuellement", roleHelper: "Aide (chrono & arrivées)", teamHint: "Les comptes existants (participants aussi) sont ajoutés directement ; les nouveaux e-mails reçoivent un lien.", memberAdded: "Compte ajouté directement à l’équipe.", entriesSave: "Enregistrer la liste", entriesSaved: "inscriptions enregistrées.", entriesUnreadable: "Impossible de lire la liste.", onlineEntries: "inscrits en ligne",
     handicap: "Yardstick",
     newTitle: "Nouvelle régate", copyTitle: "Copier la régate",
     newIntro: "Seuls le nom et la date sont obligatoires. La régate reste un brouillon jusqu'à sa publication.",
@@ -75,6 +77,8 @@ const fr: Dict = {
     create: "Créer la régate", racesTitle: "Manches & chrono de départ", discards: "Retraits", discardsHint: "p. ex. 4:1,8:2 = 1 retrait dès 4 manches, 2 dès 8",
   },
   form: {
+    errClub: "Choisissez un club enregistré. S’il manque, demandez à l’admin.", clubSearch: "Chercher un club…", clubNew: "Nouveau club (admin seulement)",
+    dates: "Dates *", datesHint: "touchez le début et la fin, ou tapez p. ex. 15.–16.5.2027", datesPh: "JJ.MM.AAAA – JJ.MM.AAAA", datesBad: "Date non reconnue, p. ex. 15.5.2027 ou 15.–16.5.2027", pickStart: "Choisir le premier jour", pickEnd: "Choisir le dernier jour (même jour = un jour)",
     title: "Nom de la régate *", titlePh: "p. ex. Régate d'automne Thalwil", from: "Du *", to: "Au", toHint: "vide = un jour",
     club: "Club organisateur", clubPh: "Choisir ou saisir un club", venue: "Lieu / plan d'eau", venuePh: "p. ex. Thalwil, lac de Zurich",
     classes: "Séries", classesHint: "séparées par des virgules", more: "Autres informations", entryUrl: "Lien d'inscription externe",
@@ -89,6 +93,8 @@ const fr: Dict = {
     noTable: "Aucun tableau trouvé dans le fichier.", needInput: "Choisissez un fichier ou collez un tableau.", resDone: "Résultats publiés.", publishing: "Publication…",
   },
   entry: {
+    closesAt: "Clôture des inscriptions",
+    hostNoEntry: "En tant qu’organisateur de cette régate, vous ne pouvez pas vous y inscrire. Vous gérez la liste des inscrits dans l’éditeur.", hostManage: "Liste des inscrits",
     title: "Inscription", intro: "Inscrivez votre bateau à cette régate.", closed: "Les inscriptions en ligne sont fermées.", loginFirst: "Connectez-vous ou créez un compte pour vous inscrire.",
     myBoat: "Bateau enregistré", newBoat: "Nouveau bateau", sailNo: "N° de voile *", boatName: "Nom du bateau", skipper: "Barreur·se *", crew: "Équipage",
     crewPh: "Noms, séparés par des virgules", club: "Club", saveBoat: "Enregistrer le bateau pour les prochaines inscriptions", submit: "Envoyer l'inscription",
@@ -109,11 +115,14 @@ const fr: Dict = {
     mailWarnSubject: "Votre compte windracehub va être supprimé", mailWarnBody: "Bonjour {name}\n\nvotre compte windracehub n'a pas été utilisé depuis un an et sera supprimé automatiquement le {date}.\nPour le conserver, connectez-vous simplement une fois d'ici là : {url}\n\nwindracehub",
     mailHostSubject: "Votre accès organisateur windracehub", mailHostBody: "Bonjour {name}\n\nun accès organisateur a été créé pour vous sur windracehub. Définissez votre mot de passe ici (valable 14 jours) :\n{url}\n\nwindracehub",
   },
-  admin: { title: "Utilisateurs & rôles", intro: "Seuls les organisateurs et les admins peuvent créer des régates. Chaque nouvel utilisateur est d'abord participant.", role: "Rôle", since: "depuis", changed: "Rôle modifié." },
+  admin: { testEvent: "Régate test", testEventHint: "Crée une régate d’essai clairement marquée pour aujourd’hui avec ILCA 7 (26 bateaux) et 420 (22 bateaux) pour tout essayer. À supprimer ensuite.", testEventBtn: "Créer une régate test", title: "Utilisateurs & rôles", intro: "Seuls les organisateurs et les admins peuvent créer des régates. Chaque nouvel utilisateur est d'abord participant.", role: "Rôle", since: "depuis", changed: "Rôle modifié." },
+  racing: {
+    goRacing: "Let's go racing", goRacingHint: "Mode jour de course : créer une manche, la lancer, saisir les arrivées, la suivante. L’une après l’autre.", today: "Aujourd’hui", next: "Manche suivante", noRaces: "Pas encore de manche aujourd’hui. Créez la première :", raceOver: "Manche terminée. Suivante :", done: "Done racing", doneTitle: "Fini pour aujourd’hui ?", donePublish: "Publier les résultats provisoires", doneHint: "Vous revenez ensuite au site normal. Tout reste enregistré.", doneMsg: "Journée de course terminée.", donePub: "{n} classements publiés comme provisoires.", racesToday: "{n} aujourd’hui", back: "Retour sans clôturer", noEntries: "Pas encore d’inscrits dans cette classe. Les arrivées ont besoin d’une liste.",
+  },
   race: {
     title: "Manche", races: "Manches", add: "Ajouter une manche", none: "Pas encore de manches.", number: "N°", sequence: "Procédure de départ", black: "Noir", prepFlag: "Pavillon préparatoire",
     status: { PLANNED: "Prévue", SEQUENCE: "Procédure en cours", RUNNING: "En course", FINISHED: "Terminée", ABANDONED: "Annulée" },
-    startClock: "Chrono de départ", startSequence: "Lancer la procédure", startAt: "Départ à", startIn: "Départ dans", startNow: "Maintenant (minute pleine suivante)",
+    startClock: "Chrono de départ", startSequence: "Lancer la procédure", startAt: "Départ à", startIn: "Départ dans", startPlus1: "+1 min de préparation", startNow: "Maintenant (minute pleine suivante)",
     postpone: "Retard (Aperçu)", generalRecall: "Rappel général", abandon: "Annuler (N)", finishRace: "Terminer la manche", reset: "Réinitialiser",
     signals: { warning: "Signal d'avertissement", prep: "Signal préparatoire", prepDown: "Préparatoire affalé", start: "Départ", up: "envoyé", down: "affalé" },
     deviceAhead: "Votre appareil avance de {s} s", deviceBehind: "Votre appareil retarde de {s} s", syncHow: "Mesuré par rapport à l’horloge du serveur (synchronisée NTP) : meilleure de 6 mesures, renouvelée toutes les 60 s. ± = moitié de l’aller-retour de la meilleure mesure.", prepChangeHint: "Modifiable jusqu’au signal préparatoire", orange: "Orange", classFlag: "Pavillon de classe",

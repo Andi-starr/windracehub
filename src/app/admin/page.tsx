@@ -5,7 +5,7 @@ import { fmtDate } from "@/lib/format";
 import { mailEnabled } from "@/lib/mail";
 import { ConfirmButton } from "@/components/ActionForms";
 import { CreateHostForm, ResetLinkButton } from "@/components/AdminForms";
-import { deleteUser, setUserRole } from "./actions";
+import { createTestEvent, deleteUser, setUserRole } from "./actions";
 
 export const dynamic = "force-dynamic";
 export const metadata = { title: "Admin" };
@@ -36,6 +36,14 @@ export default async function AdminPage({ searchParams }: { searchParams: Promis
         <h2 className="h2">{t.accounts.createHost}</h2>
         <p className="mb-3 text-sm text-slate-600">{t.accounts.createHostIntro}</p>
         <CreateHostForm />
+      </section>
+
+      <section className="card flex flex-wrap items-center justify-between gap-3">
+        <div>
+          <h2 className="h2 mb-1">{t.admin.testEvent}</h2>
+          <p className="text-sm text-slate-600">{t.admin.testEventHint}</p>
+        </div>
+        <form action={createTestEvent}><button className="btn">{t.admin.testEventBtn}</button></form>
       </section>
 
       <form className="flex gap-2"><input name="q" defaultValue={q} placeholder={`${t.common.name} / ${t.common.email}`} className="input max-w-sm" /><button className="btn-ghost">{t.common.search}</button></form>

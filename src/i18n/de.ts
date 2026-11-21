@@ -2,7 +2,7 @@ const de = {
   meta: { description: "Regatten in der Schweiz: Ausschreibungen, Segelanweisungen, Mitteilungen, Meldungen, Startverfahren und Resultate an einem Ort." },
   nav: { classes: "Klassen", host: "Regatta veranstalten", clubs: "Clubs", regattas: "Regatten", myEvents: "Meine Events", myEntries: "Meine Meldungen", admin: "Admin", login: "Login", logout: "Abmelden" },
   footer: "windracehub · Regatten in der Schweiz",
-  roles: { ADMIN: "Admin", HOST: "Veranstalter", PARTICIPANT: "Teilnehmer", OFFICIAL: "Wettfahrtleitung" },
+  roles: { ADMIN: "Admin", HOST: "Veranstalter", PARTICIPANT: "Teilnehmer", HELPER: "Helfer", OFFICIAL: "Wettfahrtleitung" },
   status: { DRAFT: "Entwurf", PUBLISHED: "Öffentlich", CANCELLED: "Abgesagt", draftHidden: "Entwurf, nicht öffentlich" },
   common: {
     save: "Speichern", saved: "Gespeichert.", delete: "Löschen", remove: "Entfernen", add: "Hinzufügen", cancel: "Abbrechen",
@@ -41,8 +41,9 @@ const de = {
     sailNo: "Segelnr.", boat: "Boot", skipper: "Steuermann/-frau", crew: "Crew",
     entryLabel: "Anmeldung", contact: "Kontakt", originally: "Ursprünglich auf", liveStart: "Startuhr live",
   },
-  docTypes: { NOR: "Ausschreibung (NoR)", SI: "Segelanweisungen (SI)", AMENDMENT: "Änderung", NOTICE: "Mitteilung", PROTEST: "Protest / Entscheid", OTHER: "Weiteres" },
+  docTypes: { SCHEDULE: "Programm", NOR: "Ausschreibung (NoR)", SI: "Segelanweisungen (SI)", AMENDMENT: "Änderung", NOTICE: "Mitteilung", PROTEST: "Protest / Entscheid", OTHER: "Weiteres" },
   auth: {
+    inviteOtherEmail: "Diese Einladung ist für {email}. Melde dich ab und mit dieser Adresse wieder an.",
     loginTitle: "Login", password: "Passwort", login: "Einloggen", noAccount: "Noch kein Konto?", register: "Registrieren",
     registerTitle: "Konto erstellen", registerIntro: "Für Seglerinnen und Segler, Clubs und Wettfahrtleitungen.", createAccount: "Konto erstellen",
     wrong: "E-Mail oder Passwort falsch.", badEmail: "Bitte gültige E-Mail angeben.", noName: "Bitte Namen angeben.",
@@ -51,6 +52,7 @@ const de = {
     pleaseLogin: "Bitte einloggen.", setPw: "Lege ein Passwort fest, dann geht's los.", loginAccept: "Einloggen & annehmen", createAccept: "Konto erstellen & annehmen",
   },
   manage: {
+    tileOpen: "Bearbeiten +", tileClose: "Schliessen −", tileNone: "noch nichts", tileDocs: "{n} veröffentlicht", tileProgram: "Programm", tileProgramHint: "Lade das Programm als Dokument hoch oder entwirf es mit Claude. Es erscheint auf der öffentlichen Seite unter Programm.", tileEntriesOpen: "Meldung offen", tileEntriesDraft: "Meldung öffnet mit dem Veröffentlichen", tileEntriesShut: "Meldung geschlossen", tileUntil: "bis {d}", tileTeam: "{n} im Team", tileInvited: "{n} eingeladen", tileRaces: "{n} Wettfahrten", tileResults: "{n} Ranglisten", tileComplete: "vollständig", tileMissing: "fehlt: {f}", tileLater: "Wettfahrten, Startuhr und Resultate erscheinen hier 14 Tage vor dem Start.", tileShowNow: "Jetzt schon einrichten", tileDanger: "Absagen / Löschen", helperIntro: "Als Helfer kannst du die Startuhr bedienen und Zieleinläufe erfassen.",
     hello: "Hallo", adminSees: "Admin: du siehst alle Regatten.", yours: "Deine Regatten.", newEvent: "+ Neue Regatta",
     empty: "Noch keine Regatten. Erstelle die erste mit + Neue Regatta, oder lass dich von einem Veranstalter einladen.",
     upcoming: "Kommend", past: "Vergangen", noClub: "ohne Club", documents: "Dokumente", copyNextYear: "Für nächstes Jahr kopieren",
@@ -66,7 +68,7 @@ const de = {
     uncancel: "Absage zurücknehmen", deleteForever: "Endgültig löschen", deleteQ: "Regatta mit allen Dokumenten und Resultaten endgültig löschen?",
     entriesOpen: "Online-Meldung offen", entriesOpenHint: "Teilnehmer können sich auf der Eventseite selbst melden.",
     entriesTitle: "Meldeliste", entriesPasteHint: "Spalten: Klasse, Segelnr., Boot, Steuermann/-frau, Club. Direkt aus Excel kopieren. Ersetzt alle nicht online gemeldeten Einträge.",
-    entriesSave: "Meldeliste speichern", entriesSaved: "Meldungen gespeichert.", entriesUnreadable: "Konnte die Liste nicht lesen.", onlineEntries: "online gemeldet",
+    scheduleLegacy: "Das Programm lädst du neu als Dokument oben hoch (Typ «Programm») oder entwirfst es mit Claude. Diese alten Einträge werden weiterhin angezeigt.", addEntry: "Meldung von Hand hinzufügen", roleHelper: "Helfer (Startuhr & Zieleinlauf)", teamHint: "Bestehende Konten (auch Teilnehmer) werden direkt hinzugefügt, für neue E-Mails gibt es einen Einladungslink.", memberAdded: "Konto wurde direkt zum Team hinzugefügt.", entriesSave: "Meldeliste speichern", entriesSaved: "Meldungen gespeichert.", entriesUnreadable: "Konnte die Liste nicht lesen.", onlineEntries: "online gemeldet",
     handicap: "Yardstick",
     newTitle: "Neue Regatta", copyTitle: "Regatta kopieren",
     newIntro: "Nur Name und Datum sind Pflicht. Die Regatta bleibt ein Entwurf, bis du sie veröffentlichst.",
@@ -74,6 +76,8 @@ const de = {
     create: "Regatta erstellen", racesTitle: "Wettfahrten & Startuhr", discards: "Streicher", discardsHint: "z.B. 4:1,8:2 = ab 4 Wettfahrten 1 Streicher, ab 8 zwei",
   },
   form: {
+    errClub: "Bitte einen registrierten Club wählen. Fehlt dein Club, frag den Admin.", clubSearch: "Club suchen…", clubNew: "Neuer Club (nur Admin)",
+    dates: "Datum *", datesHint: "Start und Ende antippen, oder tippen z.B. 15.–16.5.2027", datesPh: "TT.MM.JJJJ – TT.MM.JJJJ", datesBad: "Datum nicht erkannt, z.B. 15.5.2027 oder 15.–16.5.2027", pickStart: "Ersten Tag wählen", pickEnd: "Letzten Tag wählen (gleicher Tag = eintägig)",
     title: "Name der Regatta *", titlePh: "z.B. Herbstregatta Thalwil", from: "Von *", to: "Bis", toHint: "leer = eintägig",
     club: "Veranstalter (Club)", clubPh: "Club wählen oder eintippen", venue: "Ort / Revier", venuePh: "z.B. Thalwil, Zürichsee",
     classes: "Klassen", classesHint: "mit Komma trennen", more: "Weitere Angaben", entryUrl: "Externer Link zur Anmeldung",
@@ -88,6 +92,8 @@ const de = {
     noTable: "In der Datei wurde keine Tabelle gefunden.", needInput: "Bitte Datei wählen oder Tabelle einfügen.", resDone: "Resultate veröffentlicht.", publishing: "Veröffentliche…",
   },
   entry: {
+    closesAt: "Meldeschluss",
+    hostNoEntry: "Als Veranstalter dieser Regatta kannst du dich nicht selbst melden. Die Meldeliste verwaltest du im Editor.", hostManage: "Zur Meldeliste",
     title: "Melden", intro: "Melde dein Boot für diese Regatta.", closed: "Die Online-Meldung ist geschlossen.", loginFirst: "Bitte einloggen oder registrieren, um zu melden.",
     myBoat: "Gespeichertes Boot", newBoat: "Neues Boot", sailNo: "Segelnummer *", boatName: "Bootsname", skipper: "Steuermann/-frau *", crew: "Crew",
     crewPh: "Namen, mit Komma getrennt", club: "Club", saveBoat: "Boot für nächste Meldungen speichern", submit: "Meldung absenden",
@@ -108,11 +114,14 @@ const de = {
     mailWarnSubject: "Dein windracehub-Konto wird gelöscht", mailWarnBody: "Hallo {name}\n\ndein windracehub-Konto wurde seit einem Jahr nicht benutzt und wird am {date} automatisch gelöscht.\nWenn du es behalten möchtest, logge dich einfach vorher einmal ein: {url}\n\nwindracehub",
     mailHostSubject: "Dein Veranstalter-Login für windracehub", mailHostBody: "Hallo {name}\n\nfür dich wurde ein Veranstalter-Login auf windracehub erstellt. Lege hier dein Passwort fest (14 Tage gültig):\n{url}\n\nwindracehub",
   },
-  admin: { title: "Benutzer & Rollen", intro: "Nur Veranstalter und Admins können Regatten erstellen. Jeder neue Benutzer ist zuerst Teilnehmer.", role: "Rolle", since: "seit", changed: "Rolle geändert." },
+  admin: { testEvent: "Testregatta", testEventHint: "Erstellt eine klar markierte Probe-Regatta für heute mit ILCA 7 (26 Boote) und 420 (22 Boote), damit du alles ausprobieren kannst. Danach einfach löschen.", testEventBtn: "Testregatta erstellen", title: "Benutzer & Rollen", intro: "Nur Veranstalter und Admins können Regatten erstellen. Jeder neue Benutzer ist zuerst Teilnehmer.", role: "Rolle", since: "seit", changed: "Rolle geändert." },
+  racing: {
+    goRacing: "Let's go racing", goRacingHint: "Renntag-Modus: Wettfahrt anlegen, starten, Zieleinläufe erfassen, nächste. Eine nach der anderen.", today: "Heute", next: "Nächste Wettfahrt", noRaces: "Heute noch keine Wettfahrt. Leg die erste an:", raceOver: "Wettfahrt beendet. Weiter mit der nächsten:", done: "Done racing", doneTitle: "Fertig für heute?", donePublish: "Vorläufige Resultate veröffentlichen", doneHint: "Danach kommst du zurück zur normalen Seite. Alles bleibt gespeichert.", doneMsg: "Renntag abgeschlossen.", donePub: "{n} Ranglisten als vorläufig veröffentlicht.", racesToday: "{n} heute", back: "Zurück ohne Abschluss", noEntries: "Noch keine Meldungen in dieser Klasse. Zieleinläufe brauchen eine Meldeliste.",
+  },
   race: {
     title: "Wettfahrt", races: "Wettfahrten", add: "Wettfahrt hinzufügen", none: "Noch keine Wettfahrten.", number: "Nr.", sequence: "Startverfahren", black: "Schwarz", prepFlag: "Vorbereitungsflagge",
     status: { PLANNED: "Geplant", SEQUENCE: "Startverfahren läuft", RUNNING: "Unterwegs", FINISHED: "Beendet", ABANDONED: "Abgebrochen" },
-    startClock: "Startuhr", startSequence: "Startverfahren starten", startAt: "Start um", startIn: "Start in", startNow: "Sofort (nächste volle Minute)",
+    startClock: "Startuhr", startSequence: "Startverfahren starten", startAt: "Start um", startIn: "Start in", startPlus1: "+1 Min. Vorbereitung", startNow: "Sofort (nächste volle Minute)",
     postpone: "Startverschiebung (AP)", generalRecall: "Allgemeiner Rückruf", abandon: "Abbrechen (N)", finishRace: "Wettfahrt beenden", reset: "Zurücksetzen",
     signals: { warning: "Ankündigungssignal", prep: "Vorbereitungssignal", prepDown: "Vorbereitung nieder", start: "Start", up: "hoch", down: "nieder" },
     deviceAhead: "Dein Gerät geht {s} s vor", deviceBehind: "Dein Gerät geht {s} s nach", syncHow: "Gemessen gegen die Serveruhr (NTP-synchron): beste von 6 Messungen, alle 60 s neu. ± = halbe Laufzeit der besten Messung.", prepChangeHint: "Änderbar bis zum Vorbereitungssignal", orange: "Orange", classFlag: "Klassenflagge",

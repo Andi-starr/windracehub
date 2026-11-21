@@ -28,11 +28,14 @@ async function uniqueSlug(title: string, start: Date, ignoreId?: string) {
   }
 }
 
-async function clubIdFor(name: string) {
+/** Only registered clubs can host. The admin may type a new club, which registers it. */
+async function clubIdFor(name: string, isAdmin: boolean): Promise<string | null | { error: string }> {
   const n = name.trim();
-  if (!n) return null;
-  const c = await db.club.upsert({ where: { name: n }, create: { name: n }, update: {} });
-  return c.id;
+  if (!n) return isAdmin ? null : { error: (await getT()).t.form.errClub };
+  const found = await db.club.findFirst({ where: { name: { equals: n, mode: "insensitive" } } });
+  if (found) return found.id;
+  if (!isAdmin) return { error: (await getT()).t.form.errClub };
+  return (await db.club.create({ data: { name: n } })).id;
 }
 
 const EventInput = z.object({
@@ -70,6 +73,8 @@ export async function createEvent(_: ActionState, fd: FormData): Promise<ActionS
   const p = await readEvent(fd);
   if ("error" in p) return { error: p.error };
   const { v, start, end, classes } = p;
+  const clubId = await clubIdFor(v.club, user.role === "ADMIN");
+  if (clubId && typeof clubId === "object") return clubId;
   const copyFrom = String(fd.get("copyFrom") ?? "");
   const src = copyFrom ? await db.event.findUnique({ where: { id: copyFrom }, include: { schedule: true } }) : null;
   const shift = src ? start.getTime() - src.startDate.getTime() : 0;
@@ -78,8 +83,9 @@ export async function createEvent(_: ActionState, fd: FormData): Promise<ActionS
     data: {
       title: v.title,
       slug: await uniqueSlug(v.title, start),
-      clubId: await clubIdFor(v.club),
+      clubId,
       venue: v.venue || null,
+      entriesOpen: true,
       startDate: start,
       endDate: end,
       entryUrl: v.entryUrl || null,
@@ -95,17 +101,19 @@ export async function createEvent(_: ActionState, fd: FormData): Promise<ActionS
 }
 
 export async function updateEvent(eventId: string, _: ActionState, fd: FormData): Promise<ActionState> {
-  await requireEventRole(eventId, "HOST");
+  const { user } = await requireEventRole(eventId, "HOST");
   const { t } = await getT();
   const p = await readEvent(fd);
   if ("error" in p) return { error: p.error };
   const { v, start, end, classes } = p;
+  const clubId = await clubIdFor(v.club, user.role === "ADMIN");
+  if (clubId && typeof clubId === "object") return clubId;
   const existing = await db.eventClass.findMany({ where: { eventId } });
   await db.$transaction([
     db.event.update({
       where: { id: eventId },
       data: {
-        title: v.title, clubId: await clubIdFor(v.club), venue: v.venue || null,
+        title: v.title, clubId, venue: v.venue || null,
         startDate: start, endDate: end, entryUrl: v.entryUrl || null, entryInfo: v.entryInfo || null,
         contactEmail: v.contactEmail || null, description: v.description || null,
       },
@@ -147,7 +155,7 @@ export async function prepareUpload(eventId: string, fileName: string) {
   return { key, url: await signedUploadUrl(key) };
 }
 
-const DOC_TYPES = ["NOR", "SI", "AMENDMENT", "NOTICE", "PROTEST", "OTHER"] as const;
+const DOC_TYPES = ["NOR", "SI", "SCHEDULE", "AMENDMENT", "NOTICE", "PROTEST", "OTHER"] as const;
 
 export async function addDocument(eventId: string, d: { key: string; fileName: string; size: number; type: string; title: string }) {
   const { user } = await requireEventRole(eventId);
@@ -257,8 +265,16 @@ export async function inviteMember(eventId: string, _: ActionState, fd: FormData
   await requireEventRole(eventId, "HOST");
   const { t } = await getT();
   const email = String(fd.get("email") ?? "").trim().toLowerCase();
-  const role = (fd.get("role") === "HOST" ? "HOST" : "OFFICIAL") as Role;
+  const role = (fd.get("role") === "HOST" ? "HOST" : fd.get("role") === "HELPER" ? "HELPER" : "OFFICIAL") as Role;
   if (!/^\S+@\S+\.\S+$/.test(email)) return { error: t.auth.badEmail };
+  // existing accounts (also normal participants) are added straight away, no link needed
+  const existing = await db.user.findUnique({ where: { email } });
+  if (existing) {
+    await db.eventRole.upsert({ where: { userId_eventId: { userId: existing.id, eventId } }, create: { userId: existing.id, eventId, role }, update: { role } });
+    if (role === "HOST" && existing.role === "PARTICIPANT") await db.user.update({ where: { id: existing.id }, data: { role: "HOST" } });
+    await touch(eventId);
+    return { ok: "" };
+  }
   const token = newToken();
   await db.invite.create({ data: { token, eventId, email, role } });
   await touch(eventId);
@@ -283,7 +299,11 @@ export async function setEntryOptions(eventId: string, fd: FormData) {
   const discards = String(fd.get("discards") ?? "").replace(/\s/g, "");
   await db.event.update({
     where: { id: eventId },
-    data: { entriesOpen: fd.get("entriesOpen") === "on", discards: /^(\d+:\d+)(,\d+:\d+)*$/.test(discards) ? discards : null },
+    data: {
+      entriesOpen: fd.get("entriesOpen") === "on",
+      entriesCloseAt: /^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}$/.test(String(fd.get("closeAt") ?? "")) ? parseZurichLocal(String(fd.get("closeAt"))) : null,
+      discards: /^(\d+:\d+)(,\d+:\d+)*$/.test(discards) ? discards : null,
+    },
   });
   await touch(eventId);
 }
@@ -292,4 +312,34 @@ export async function deleteEntry(eventId: string, id: string) {
   await requireEventRole(eventId);
   await db.entry.deleteMany({ where: { id, eventId } });
   await touch(eventId);
+}
+
+function entryData(fd: FormData) {
+  const g = (k: string) => String(fd.get(k) ?? "").trim();
+  const hc = g("handicap").replace(",", ".");
+  return {
+    classId: g("classId") || null, sailNumber: g("sailNumber") || null, boatName: g("boatName") || null,
+    skipper: g("skipper") || null, crew: g("crew") || null, club: g("club") || null,
+    handicap: hc && !Number.isNaN(Number(hc)) ? Number(hc) : null,
+  };
+}
+
+/** Host/race committee adds one entry by hand (not linked to an account). */
+export async function addEntry(eventId: string, fd: FormData) {
+  await requireEventRole(eventId);
+  const d = entryData(fd);
+  if (!d.sailNumber && !d.skipper) return;
+  if (d.classId && !(await db.eventClass.findFirst({ where: { id: d.classId, eventId } }))) d.classId = null;
+  await db.entry.create({ data: { eventId, ...d } });
+  await touch(eventId);
+}
+
+/** Host/race committee corrects any entry of their event, including online ones. */
+export async function updateEntry(eventId: string, id: string, fd: FormData) {
+  await requireEventRole(eventId);
+  const d = entryData(fd);
+  if (d.classId && !(await db.eventClass.findFirst({ where: { id: d.classId, eventId } }))) d.classId = null;
+  await db.entry.updateMany({ where: { id, eventId }, data: d });
+  await touch(eventId);
+  redirect(`/manage/${eventId}#entries`);
 }

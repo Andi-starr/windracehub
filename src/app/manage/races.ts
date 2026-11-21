@@ -11,7 +11,7 @@ const SEQ_RE = /^\d+(,\d+)*,0$/;
 
 async function raceFor(raceId: string) {
   const r = await db.race.findUniqueOrThrow({ where: { id: raceId }, include: { event: { select: { id: true, slug: true } } } });
-  await requireEventRole(r.eventId);
+  await requireEventRole(r.eventId, "HELPER");
   return r;
 }
 function touch(r: { eventId: string; id: string; event: { slug: string } }) {
@@ -21,7 +21,8 @@ function touch(r: { eventId: string; id: string; event: { slug: string } }) {
 }
 
 export async function addRace(eventId: string, fd: FormData) {
-  await requireEventRole(eventId);
+  // helpers may add the next race on race day; publishing results still needs host or race committee
+  await requireEventRole(eventId, "HELPER");
   const classId = String(fd.get("classId") ?? "") || null;
   if (classId && !(await db.eventClass.findFirst({ where: { id: classId, eventId } }))) return;
   const last = await db.race.findFirst({ where: { eventId, classId }, orderBy: { number: "desc" } });
@@ -29,7 +30,7 @@ export async function addRace(eventId: string, fd: FormData) {
     data: { eventId, classId, number: (last?.number ?? 0) + 1 },
   });
   revalidatePath(`/manage/${eventId}`);
-  redirect(`/manage/${eventId}/race/${r.id}`);
+  redirect(fd.get("to") === "racing" ? `/manage/${eventId}/racing?race=${r.id}` : `/manage/${eventId}/race/${r.id}`);
 }
 
 const PREP_FLAGS = ["P", "I", "Z", "U", "BLACK"];
@@ -47,7 +48,9 @@ export async function startSequence(raceId: string, at: string, sequence?: strin
     startAt = parseZurichLocal(`${today}T${at}`);
     if (startAt.getTime() - first * 60e3 < Date.now()) startAt = new Date(Math.ceil(Date.now() / 60e3) * 60e3 + first * 60e3);
   } else {
-    startAt = new Date(Math.ceil((Date.now() + 5e3) / 60e3) * 60e3 + first * 60e3);
+    // "+1" = one extra minute before the first signal so the committee can get ready
+    const extra = at === "+1" ? 60e3 : 0;
+    startAt = new Date(Math.ceil((Date.now() + 5e3) / 60e3) * 60e3 + extra + first * 60e3);
   }
   await db.race.update({ where: { id: raceId }, data: { status: "SEQUENCE", startAt, note: null, sequence: seq, prepFlag: prep } });
   touch(r);
@@ -117,6 +120,18 @@ async function renumber(raceId: string) {
 
 export async function publishSeries(eventId: string, classId: string | null) {
   const { user } = await requireEventRole(eventId);
+  await writeSeries(eventId, classId, user.name);
+}
+
+/** "Done racing": optionally publish provisional series results per class, then back to the normal editor. */
+export async function doneRacing(eventId: string, fd: FormData) {
+  const { user, role } = await requireEventRole(eventId, "HELPER");
+  const pick = role === "HELPER" ? [] : fd.getAll("publish").map(String);
+  for (const c of pick) await writeSeries(eventId, c || null, user.name);
+  redirect(`/manage/${eventId}?racing=done&pub=${pick.length}${pick.length ? "#results" : ""}`);
+}
+
+async function writeSeries(eventId: string, classId: string | null, by: string) {
   const { t } = await getT();
   const ev = await db.event.findUniqueOrThrow({ where: { id: eventId } });
   const [entries, races, cls] = await Promise.all([
@@ -129,7 +144,7 @@ export async function publishSeries(eventId: string, classId: string | null) {
   await db.result.create({
     data: {
       eventId, classId, provisional: true, title: `${cls?.name ?? t.common.total} · ${s.races.length} ${t.race.races}`,
-      headers: table.headers, rows: table.rows, uploadedBy: user.name,
+      headers: table.headers, rows: table.rows, uploadedBy: by,
     },
   });
   revalidatePath(`/e/${ev.slug}`);

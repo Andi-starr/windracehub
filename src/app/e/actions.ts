@@ -3,14 +3,17 @@ import { revalidatePath } from "next/cache";
 import { db } from "@/lib/db";
 import { requireUser } from "@/lib/auth";
 import { getT } from "@/i18n";
+import { entriesAreOpen } from "@/lib/format";
 
 export type EntryState = { error?: string; ok?: boolean } | undefined;
 
 export async function enterEvent(eventId: string, _: EntryState, fd: FormData): Promise<EntryState> {
   const user = await requireUser();
   const { t } = await getT();
+  // a host of this regatta manages its entry list but can't enter it; hosts can still sail other regattas
+  if (await db.eventRole.findFirst({ where: { userId: user.id, eventId, role: "HOST" } })) return { error: t.entry.hostNoEntry };
   const e = await db.event.findUnique({ where: { id: eventId }, include: { classes: true } });
-  if (!e || !e.entriesOpen || e.status !== "PUBLISHED") return { error: t.entry.closed };
+  if (!e || !entriesAreOpen(e)) return { error: t.entry.closed };
   const get = (k: string) => String(fd.get(k) ?? "").trim();
   const classId = get("classId") || null;
   if (e.classes.length > 0 && !e.classes.some((c) => c.id === classId)) return { error: t.entry.errClass };

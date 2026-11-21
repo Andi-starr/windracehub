@@ -14,7 +14,7 @@ export const metadata = { title: "Race" };
 
 export default async function RacePage({ params }: { params: Promise<{ id: string; raceId: string }> }) {
   const { id, raceId } = await params;
-  await requireEventRole(id);
+  await requireEventRole(id, "HELPER");
   const { t } = await getT();
   const race = await db.race.findFirst({ where: { id: raceId, eventId: id }, include: { eventClass: true, event: true, finishes: true } });
   if (!race) notFound();

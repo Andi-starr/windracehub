@@ -37,7 +37,7 @@ export default async function NewEventPage({ searchParams }: { searchParams: Pro
       <p className="mb-4 text-sm text-slate-600">
         {defaults.copyFrom ? t.manage.copyIntro : t.manage.newIntro}
       </p>
-      <EventForm action={createEvent} clubs={clubs} defaults={defaults} submit={t.manage.create} />
+      <EventForm action={createEvent} clubs={clubs} defaults={defaults} submit={t.manage.create} allowNewClub={user.role === "ADMIN"} />
     </div>
   );
 }

@@ -1,6 +1,7 @@
 "use server";
 import { revalidatePath } from "next/cache";
 import { headers } from "next/headers";
+import { redirect } from "next/navigation";
 import type { UserRole } from "@prisma/client";
 import { db } from "@/lib/db";
 import { newToken, requireRole } from "@/lib/auth";
@@ -59,4 +60,39 @@ export async function deleteUser(userId: string) {
   if (!u || u.id === me.id || u.role === "ADMIN") return;
   await db.user.delete({ where: { id: userId } });
   revalidatePath("/admin");
+}
+
+const FIRST = ["Anna", "Luca", "Mia", "Noah", "Lea", "Jonas", "Sara", "Elias", "Nina", "David", "Laura", "Tim", "Julia", "Marc", "Lena", "Simon", "Chiara", "Nico", "Alina", "Fabian", "Céline", "Matteo", "Jana", "Robin", "Sophie", "Yannick", "Eva", "Pascal"];
+const LAST = ["Müller", "Meier", "Schmid", "Keller", "Weber", "Huber", "Steiner", "Fischer", "Brunner", "Baumann", "Frei", "Zimmermann", "Moser", "Widmer", "Graf", "Wyss", "Roth", "Kuhn", "Bühler", "Marti", "Favre", "Rossi", "Bernasconi", "Dubois"];
+const CLUBS = ["SCOZ", "ZYC", "SVT", "SCK", "YCB", "SNG", "CNM", "SCR", "SCU", "RCO"];
+const BOATS = ["Blue Note", "Windspiel", "Libelle", "Möwe", "Sturmvogel", "Flinke Flunder", "Seeschwalbe", "Albatros", "Wellenreiter", "Lady Luck", "Föhn", "Bise", "Joran", "Nordwind", "Tramontana", "Zephyr", "Eisvogel", "Schwan", "Kormoran", "Delfin", "Orca", "Hecht", "Felchen", "Barracuda", "Mistral", "Vento", "Libeccio"];
+
+/** Admin-only: a clearly marked practice regatta (today, two classes, 20-30 boats each) to try every feature. */
+export async function createTestEvent() {
+  const me = await requireRole("ADMIN");
+  const today = new Intl.DateTimeFormat("en-CA", { timeZone: "Europe/Zurich" }).format(new Date());
+  const start = new Date(`${today}T00:00:00Z`);
+  const end = new Date(start.getTime() + 86400000);
+  const club = await db.club.findFirst({ orderBy: { name: "asc" } });
+  let n = 1;
+  while (await db.event.findUnique({ where: { slug: `test-regatta-${today}-${n}` } })) n++;
+  const rnd = (a: readonly string[], i: number, k: number) => a[(i * k + 3) % a.length];
+  const e = await db.event.create({
+    data: {
+      title: `TEST · Probe-Regatta ${n}`, slug: `test-regatta-${today}-${n}`, startDate: start, endDate: end, status: "PUBLISHED",
+      venue: "Testrevier", contactEmail: me.email, clubId: club?.id ?? null, discards: "4:1",
+      description: "Testregatta zum Ausprobieren. Alle Meldungen sind erfunden. Kann gelöscht werden.",
+      roles: { create: { userId: me.id, role: "HOST" } },
+      classes: { create: [{ name: "ILCA 7", position: 0 }, { name: "420", position: 1 }] },
+    },
+    include: { classes: true },
+  });
+  const [ilca, c420] = e.classes.sort((a, b) => a.position - b.position);
+  const rows = [
+    ...Array.from({ length: 26 }, (_, i) => ({ classId: ilca.id, sailNumber: `SUI ${201 + i * 7}`, skipper: `${rnd(FIRST, i, 7)} ${rnd(LAST, i, 5)}`, crew: null, boatName: null, club: rnd(CLUBS, i, 3) })),
+    ...Array.from({ length: 22 }, (_, i) => ({ classId: c420.id, sailNumber: `SUI ${5501 + i * 3}`, skipper: `${rnd(FIRST, i + 9, 5)} ${rnd(LAST, i + 4, 7)}`, crew: `${rnd(FIRST, i + 2, 11)} ${rnd(LAST, i + 8, 3)}`, boatName: rnd(BOATS, i, 1), club: rnd(CLUBS, i + 5, 7) })),
+  ];
+  await db.entry.createMany({ data: rows.map((r) => ({ ...r, eventId: e.id })) });
+  revalidatePath("/manage");
+  redirect(`/manage/${e.id}`);
 }

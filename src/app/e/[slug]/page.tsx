@@ -4,7 +4,7 @@ import type { Metadata } from "next";
 import { db } from "@/lib/db";
 import { currentUser } from "@/lib/auth";
 import { publicUrl } from "@/lib/storage";
-import { fmtDateTime, fmtRange, fmtSize, fmtTime, fmtDate } from "@/lib/format";
+import { fmtDateTime, fmtRange, fmtSize, fmtTime, fmtDate, entriesAreOpen } from "@/lib/format";
 import { getT } from "@/i18n";
 import type { Dict } from "@/i18n/de";
 import { ResultTable } from "@/components/ResultTable";
@@ -44,7 +44,8 @@ export default async function EventPage({ params }: { params: P }) {
 
   const fresh = (d: Date) => Date.now() - d.getTime() < 48 * 3600e3;
   const mainDocs = e.documents.filter((d) => d.type === "NOR" || d.type === "SI");
-  const board = e.documents.filter((d) => d.type !== "NOR" && d.type !== "SI");
+  const scheduleDocs = e.documents.filter((d) => d.type === "SCHEDULE");
+  const board = e.documents.filter((d) => d.type !== "NOR" && d.type !== "SI" && d.type !== "SCHEDULE");
   const latest = new Map<string, (typeof e.results)[number]>();
   for (const r of e.results) {
     const k = r.classId ?? r.title;
@@ -55,7 +56,8 @@ export default async function EventPage({ params }: { params: P }) {
   const [boats, crew] = user && !myEntry
     ? await Promise.all([db.boat.findMany({ where: { userId: user.id } }), db.crewMember.findMany({ where: { userId: user.id }, orderBy: { name: "asc" } })])
     : [[], []];
-  const canEnter = e.entriesOpen && e.status === "PUBLISHED";
+  const canEnter = entriesAreOpen(e);
+  const isHost = !!user && !!(await db.eventRole.findFirst({ where: { userId: user.id, eventId: e.id, role: "HOST" } }));
   const liveRaces = e.races.filter((r) => r.status === "SEQUENCE" || r.status === "RUNNING");
 
   return (
@@ -77,7 +79,7 @@ export default async function EventPage({ params }: { params: P }) {
           </div>
           <div className="flex flex-wrap gap-2">
             {canEdit && <Link href={`/manage/${e.id}`} className="btn">{t.common.edit}</Link>}
-            {canEnter && !myEntry && <a href="#melden" className="btn">{t.event.enter}</a>}
+            {canEnter && !myEntry && !isHost && <a href="#melden" className="btn">{t.event.enter}</a>}
             {e.entryUrl && <a href={e.entryUrl} className="btn-ghost" target="_blank" rel="noreferrer">{t.event.externalEntry} ↗</a>}
             <a href={`/e/${e.slug}/ics`} className="btn-ghost">{t.event.calendar}</a>
           </div>
@@ -87,7 +89,7 @@ export default async function EventPage({ params }: { params: P }) {
           <a href="#resultate">{t.event.results}</a>
           {e.races.length > 0 && <a href="#wettfahrten">{t.event.races}</a>}
           {(e.entries.length > 0 || canEnter) && <a href="#meldungen">{t.event.entries} ({e.entries.length})</a>}
-          {e.schedule.length > 0 && <a href="#programm">{t.event.schedule}</a>}
+          {(e.schedule.length > 0 || scheduleDocs.length > 0) && <a href="#programm">{t.event.schedule}</a>}
           {(e.description || e.entryInfo) && <a href="#info">{t.event.info}</a>}
         </nav>
       </header>
@@ -120,6 +122,7 @@ export default async function EventPage({ params }: { params: P }) {
       {canEnter && (
         <section id="melden" className="card">
           <h2 className="h2">{t.entry.title}</h2>
+          {e.entriesCloseAt && <p className="mb-3 text-[11px] font-medium uppercase tracking-wide">{t.entry.closesAt}: {fmtDateTime(e.entriesCloseAt, intl)}</p>}
           {!user ? (
             <p className="text-sm">{t.entry.loginFirst} <Link className="text-sea-600 underline" href={`/login?next=/e/${e.slug}%23melden`}>{t.nav.login}</Link> · <Link className="text-sea-600 underline" href={`/register?next=/e/${e.slug}%23melden`}>{t.auth.register}</Link></p>
           ) : myEntry ? (
@@ -128,6 +131,8 @@ export default async function EventPage({ params }: { params: P }) {
               <span>{[myEntry.eventClass?.name, myEntry.sailNumber, myEntry.boatName, myEntry.skipper, myEntry.crew].filter(Boolean).join(" · ")}</span>
               <ConfirmButton action={withdrawEntry.bind(null, myEntry.id)} label={t.entry.withdraw} question={t.entry.withdrawQ} />
             </div>
+          ) : isHost ? (
+            <p className="text-sm">{t.entry.hostNoEntry} <Link className="underline" href={`/manage/${e.id}#entries`}>{t.entry.hostManage} →</Link></p>
           ) : (
             <EntryForm eventId={e.id} classes={e.classes.map((c) => ({ id: c.id, name: c.name }))} boats={boats} crew={crew.map((c) => ({ id: c.id, name: c.name }))} defaultSkipper={user.name} />
           )}
@@ -192,9 +197,10 @@ export default async function EventPage({ params }: { params: P }) {
         </section>
       )}
 
-      {e.schedule.length > 0 && (
+      {(e.schedule.length > 0 || scheduleDocs.length > 0) && (
         <section id="programm" className="card">
           <h2 className="h2">{t.event.schedule}</h2>
+          {scheduleDocs.length > 0 && <ul className="mb-3 space-y-2">{scheduleDocs.map((d) => <DocRow key={d.id} d={d} fresh={fresh(d.publishedAt)} t={t} intl={intl} />)}</ul>}
           <ul className="divide-y divide-slate-100 text-sm">
             {e.schedule.map((s) => (
               <li key={s.id} className="flex gap-4 py-2">

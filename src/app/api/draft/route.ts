@@ -8,6 +8,7 @@ export const maxDuration = 300;
 const TYPES = {
   NOR: "Notice of Race (Ausschreibung / Avis de course)",
   SI: "Sailing Instructions (Segelanweisungen / Instructions de course)",
+  SCHEDULE: "Schedule of the event (Programm / Programme): registration, briefing, warning signals per day, last possible warning signal, prize giving. Use a clear day-by-day table-like layout with times",
   AMENDMENT: "Amendment to the Sailing Instructions or Notice of Race",
   NOTICE: "Notice to competitors (Mitteilung an die Teilnehmer / Avis aux concurrents)",
 } as const;

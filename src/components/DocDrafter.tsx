@@ -6,16 +6,16 @@ import { useT } from "@/i18n/client";
 import { uploadFile } from "./upload";
 import { textToPdf } from "./textPdf";
 
-const TYPES = ["NOR", "SI", "AMENDMENT", "NOTICE"] as const;
+const TYPES = ["NOR", "SI", "SCHEDULE", "AMENDMENT", "NOTICE"] as const;
 type Draft = { type: string; lang: string; notes: string; title: string; text: string };
 
-export function DocDrafter({ eventId, eventTitle, enabled }: { eventId: string; eventTitle: string; enabled: boolean }) {
+export function DocDrafter({ eventId, eventTitle, enabled, defaultType = "NOR" }: { eventId: string; eventTitle: string; enabled: boolean; defaultType?: string }) {
   const { t, intl } = useT();
   const locale = intl.slice(0, 2);
   const router = useRouter();
-  const store = `wrh-draft-${eventId}`;
+  const store = `wrh-draft-${eventId}${defaultType === "NOR" ? "" : `-${defaultType}`}`;
   const [open, setOpen] = useState(false);
-  const [d, setD] = useState<Draft>({ type: "NOR", lang: locale, notes: "", title: "", text: "" });
+  const [d, setD] = useState<Draft>({ type: defaultType, lang: locale, notes: "", title: "", text: "" });
   const [state, setState] = useState<"idle" | "writing" | "publishing" | "done" | "error">("idle");
   const [msg, setMsg] = useState("");
   const abort = useRef<AbortController | null>(null);

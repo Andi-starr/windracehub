@@ -12,6 +12,10 @@ export default async function InvitePage({ params }: { params: Promise<{ token: 
   if (!inv || inv.acceptedAt) return <div className="card mx-auto max-w-md">{t.auth.inviteInvalid}</div>;
 
   const user = await currentUser();
+  // an invite only works for the address it was sent to, so a forwarded link can't grant access
+  if (user && user.email.toLowerCase() !== inv.email.toLowerCase()) {
+    return <div className="card mx-auto max-w-md space-y-3 text-sm"><p>{t.auth.inviteOtherEmail.replace("{email}", inv.email)}</p><form action="/logout" method="post"><button className="btn-ghost">{t.nav.logout}</button></form></div>;
+  }
   if (user) {
     await db.$transaction([
       db.eventRole.upsert({

@@ -2,15 +2,17 @@
 import { useActionState } from "react";
 import type { ActionState } from "@/app/manage/actions";
 import { useT } from "@/i18n/client";
+import { DateRangePicker } from "./DateRangePicker";
+import { ClubSelect } from "./ClubSelect";
 
 export type EventDefaults = {
   title?: string; club?: string; venue?: string; startDate?: string; endDate?: string; classes?: string;
   entryUrl?: string; entryInfo?: string; contactEmail?: string; description?: string; copyFrom?: string;
 };
 
-export function EventForm({ action, defaults = {}, clubs, submit }: {
+export function EventForm({ action, defaults = {}, clubs, submit, allowNewClub = false }: {
   action: (s: ActionState, fd: FormData) => Promise<ActionState>;
-  defaults?: EventDefaults; clubs: string[]; submit: string;
+  defaults?: EventDefaults; clubs: string[]; submit: string; allowNewClub?: boolean;
 }) {
   const { t } = useT();
   const [state, run, pending] = useActionState(action, undefined);
@@ -22,18 +24,13 @@ export function EventForm({ action, defaults = {}, clubs, submit }: {
         <input id="title" name="title" required className="input" defaultValue={defaults.title} placeholder={t.form.titlePh} />
       </div>
       <div className="grid gap-4 sm:grid-cols-2">
-        <div>
-          <label className="label" htmlFor="startDate">{t.form.from}</label>
-          <input id="startDate" name="startDate" type="date" required className="input" defaultValue={defaults.startDate} />
-        </div>
-        <div>
-          <label className="label" htmlFor="endDate">{t.form.to} <span className="font-normal text-slate-500">({t.form.toHint})</span></label>
-          <input id="endDate" name="endDate" type="date" className="input" defaultValue={defaults.endDate} />
+        <div className="sm:col-span-2">
+          <label className="label" htmlFor="dates">{t.form.dates} <span className="font-normal normal-case text-ink/50">({t.form.datesHint})</span></label>
+          <DateRangePicker defaultStart={defaults.startDate} defaultEnd={defaults.endDate} required />
         </div>
         <div>
           <label className="label" htmlFor="club">{t.form.club}</label>
-          <input id="club" name="club" list="clubs" className="input" defaultValue={defaults.club} placeholder={t.form.clubPh} />
-          <datalist id="clubs">{clubs.map((c) => <option key={c} value={c} />)}</datalist>
+          <ClubSelect clubs={clubs} defaultValue={defaults.club} allowNew={allowNewClub} />
         </div>
         <div>
           <label className="label" htmlFor="venue">{t.form.venue}</label>
@@ -44,7 +41,7 @@ export function EventForm({ action, defaults = {}, clubs, submit }: {
         <label className="label" htmlFor="classes">{t.form.classes} <span className="font-normal text-slate-500">({t.form.classesHint})</span></label>
         <input id="classes" name="classes" className="input" defaultValue={defaults.classes} placeholder="Laser ILCA 7, Laser ILCA 6, Yardstick" />
       </div>
-      <details className="rounded-lg border border-slate-200 p-3" open={!!(defaults.entryUrl || defaults.description || defaults.contactEmail)}>
+      <details className="border border-ink/15 p-3" open>
         <summary className="cursor-pointer text-sm font-medium text-slate-700">{t.form.more} ({t.common.optional})</summary>
         <div className="mt-3 space-y-4">
           <div className="grid gap-4 sm:grid-cols-2">
