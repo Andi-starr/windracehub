@@ -2,11 +2,12 @@
 import { useEffect, useState, useTransition } from "react";
 import { useRouter } from "next/navigation";
 import { useT } from "@/i18n/client";
-import { recordFinish, removeFinish, setCode } from "@/app/manage/races";
+import { markEarly, recordFinish, removeFinish, setCode } from "@/app/manage/races";
 import { useServerClock } from "./clock";
 import { PENALTY_CODES } from "@/lib/scoring";
 
 type E = { id: string; sailNumber: string | null; skipper: string | null; boatName: string | null };
+const EARLY = ["OCS", "UFD", "BFD"];
 type F = { entryId: string; finishedAt: string | null; position: number | null; code: string | null };
 
 export function FinishRecorder({ raceId, startAt, entries, finishes }: { raceId: string; startAt: number | null; entries: E[]; finishes: F[] }) {
@@ -18,8 +19,17 @@ export function FinishRecorder({ raceId, startAt, entries, finishes }: { raceId:
   // boats can only finish once the start signal has been made
   const [now, setNow] = useState(() => Date.now());
   useEffect(() => { const i = setInterval(() => setNow(Date.now()), 500); return () => clearInterval(i); }, []);
-  const started = !!startAt && now + (sync?.offset ?? 0) >= startAt;
-  const done = new Set([...finishes.map((f) => f.entryId), ...optimistic]);
+  const t0 = now + (sync?.offset ?? 0);
+  const started = !!startAt && t0 >= startAt;
+  // early starters can be marked from one minute before the start; until 3 min after the start that is the default view
+  const earlyOpen = !!startAt && t0 >= startAt - 60e3;
+  const [modePick, setModePick] = useState<"early" | "finish" | null>(null);
+  const mode = !earlyOpen ? "finish" : modePick ?? (startAt && t0 < startAt + 3 * 60e3 ? "early" : "finish");
+  const [earlyCode, setEarlyCode] = useState("OCS");
+  const earlyOf = new Map(finishes.filter((f) => f.code && EARLY.includes(f.code)).map((f) => [f.entryId, f.code as string]));
+  const toggleEarly = (id: string) => start(async () => { await markEarly(raceId, id, earlyOf.has(id) ? "" : earlyCode); router.refresh(); });
+  // "done" = has a finish time or a non-start code; boats only marked early (OCS…) can still finish
+  const done = new Set([...finishes.filter((f) => f.finishedAt || (f.code && !EARLY.includes(f.code))).map((f) => f.entryId), ...optimistic]);
   const byId = new Map(entries.map((e) => [e.id, e]));
   const fmt = (iso: string | null) => {
     if (!iso) return "";
@@ -38,15 +48,42 @@ export function FinishRecorder({ raceId, startAt, entries, finishes }: { raceId:
   return (
     <div className="space-y-4">
       <div>
+        {earlyOpen && (
+          <div className="mb-3 grid grid-cols-2 border-2 border-ink text-sm font-semibold uppercase">
+            <button type="button" aria-pressed={mode === "early"} onClick={() => setModePick("early")} className={`py-3 ${mode === "early" ? "bg-ink text-paper" : "bg-white"}`}>{t.race.modeEarly}{earlyOf.size ? ` (${earlyOf.size})` : ""}</button>
+            <button type="button" aria-pressed={mode === "finish"} onClick={() => setModePick("finish")} className={`py-3 ${mode === "finish" ? "bg-ink text-paper" : "bg-white"}`}>{t.race.modeFinish}</button>
+          </div>
+        )}
+        {mode === "early" ? (
+          <>
+            <div className="mb-2 flex flex-wrap items-center gap-2 text-sm">
+              <span className="text-slate-600">{t.race.earlyHint}</span>
+              {EARLY.map((c) => <button key={c} type="button" onClick={() => setEarlyCode(c)} className={`border-2 border-ink px-3 py-1 text-xs font-bold ${earlyCode === c ? "bg-ink text-paper" : "bg-white"}`}>{c}</button>)}
+            </div>
+            <div className="grid grid-cols-3 gap-2 sm:grid-cols-5">
+              {entries.map((e) => {
+                const c = earlyOf.get(e.id);
+                return (
+                  <button key={e.id} disabled={pending} onClick={() => toggleEarly(e.id)} aria-pressed={!!c}
+                    className={`rounded-xl border-2 border-ink px-2 py-4 text-center text-lg font-bold active:scale-95 ${c ? "bg-accent text-ink" : "bg-white text-ink"}`}>
+                    <span className="block text-lg">{e.sailNumber}</span>
+                    <span className="block truncate text-xs font-normal">{c ?? e.skipper ?? e.boatName}</span>
+                  </button>
+                );
+              })}
+            </div>
+          </>
+        ) : <>
         <p className="mb-2 text-sm text-slate-600">{started ? t.race.tapToFinish : t.race.finishAfterStart}</p>
         {started && <div className="grid grid-cols-3 gap-2 sm:grid-cols-5">
           {entries.filter((e) => !done.has(e.id)).map((e) => (
             <button key={e.id} onClick={() => tap(e.id)} className="rounded-xl border-2 border-ink bg-white px-2 py-4 text-center text-lg font-bold text-ink active:scale-95 active:bg-accent">
               <span className="block text-lg">{e.sailNumber}</span>
-              <span className="block truncate text-xs font-normal text-slate-500">{e.skipper ?? e.boatName}</span>
+              <span className="block truncate text-xs font-normal text-slate-500">{earlyOf.has(e.id) ? <b className="text-accent">{earlyOf.get(e.id)}</b> : e.skipper ?? e.boatName}</span>
             </button>
           ))}
         </div>}
+        </>}
       </div>
       {ordered.length > 0 && (
         <ol className="divide-y divide-slate-100 rounded-lg border border-slate-200 bg-white text-sm">
@@ -57,7 +94,7 @@ export function FinishRecorder({ raceId, startAt, entries, finishes }: { raceId:
                 <span className="w-8 font-bold text-sea-700">{f.code ? "–" : f.position}</span>
                 <span className="w-24 font-semibold">{e?.sailNumber}</span>
                 <span className="flex-1 text-slate-600">{e?.skipper}</span>
-                <span className="font-mono text-xs text-slate-500">{f.code ?? fmt(f.finishedAt)}</span>
+                <span className="font-mono text-xs text-slate-500">{[f.code, fmt(f.finishedAt)].filter(Boolean).join(" · ")}</span>
                 <select aria-label={t.race.codeHint} className="input w-24 py-1 text-xs" value={f.code ?? ""} disabled={pending}
                   onChange={(ev) => start(async () => { await setCode(raceId, f.entryId, ev.target.value || ""); router.refresh(); })}>
                   <option value="">{f.code ? "–" : "✓"}</option>

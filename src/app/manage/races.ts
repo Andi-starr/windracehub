@@ -90,12 +90,31 @@ export async function recordFinish(raceId: string, entryId: string, clientAt: nu
   if (!r.startAt || now < r.startAt.getTime() - 1e3 || r.status === "PLANNED" || r.status === "ABANDONED") return;
   const at = Math.abs(clientAt - now) < 15e3 ? new Date(clientAt) : new Date(now);
   const count = await db.finish.count({ where: { raceId, code: null } });
+  const prev = await db.finish.findUnique({ where: { raceId_entryId: { raceId, entryId } } });
+  // an early starter who didn't come back keeps OCS/UFD/BFD even when it finishes; the time is kept for the record
+  const keep = prev?.code && EARLY_CODES.includes(prev.code) ? prev.code : null;
   await db.finish.upsert({
     where: { raceId_entryId: { raceId, entryId } },
     create: { raceId, entryId, finishedAt: at, position: count + 1 },
-    update: { finishedAt: at, code: null },
+    update: { finishedAt: at, code: keep, position: keep ? null : undefined },
   });
+  await renumber(raceId);
   if (r.status === "SEQUENCE") await db.race.update({ where: { id: raceId }, data: { status: "RUNNING" } });
+  touch(r);
+}
+
+const EARLY_CODES = ["OCS", "UFD", "BFD"];
+
+/** Mark (or clear) an early starter, from one minute before the start. code "" = clear. */
+export async function markEarly(raceId: string, entryId: string, code: string) {
+  const r = await raceFor(raceId);
+  if (!r.startAt || Date.now() < r.startAt.getTime() - 61e3) return;
+  if (code && !EARLY_CODES.includes(code)) return;
+  const prev = await db.finish.findUnique({ where: { raceId_entryId: { raceId, entryId } } });
+  if (code) await db.finish.upsert({ where: { raceId_entryId: { raceId, entryId } }, create: { raceId, entryId, code }, update: { code, position: null } });
+  else if (prev?.finishedAt) await db.finish.update({ where: { id: prev.id }, data: { code: null } });
+  else if (prev) await db.finish.delete({ where: { id: prev.id } });
+  await renumber(raceId);
   touch(r);
 }
 

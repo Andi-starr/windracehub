@@ -126,7 +126,7 @@ const de = {
     signals: { warning: "Ankündigungssignal", prep: "Vorbereitungssignal", prepDown: "Vorbereitung nieder", start: "Start", up: "hoch", down: "nieder" },
     deviceAhead: "Dein Gerät geht {s} s vor", deviceBehind: "Dein Gerät geht {s} s nach", syncHow: "Gemessen gegen die Serveruhr (NTP-synchron): beste von 6 Messungen, alle 60 s neu. ± = halbe Laufzeit der besten Messung.", prepChangeHint: "Änderbar bis zum Vorbereitungssignal", orange: "Orange", classFlag: "Klassenflagge",
     nextSignal: "Nächstes Signal", sinceStart: "seit Start", clockSync: "Uhr synchron", clockOffset: "Abweichung", sound: "Ton an", soundOff: "Ton aus", fullscreen: "Vollbild",
-    finishes: "Zieleinläufe", recordFinish: "Zieldurchgang erfassen", finishAfterStart: "Zieleinläufe kannst du ab dem Startsignal erfassen.", tapToFinish: "Antippen = Zieldurchgang jetzt", undo: "Rückgängig", elapsed: "Gesegelt", corrected: "Berechnet",
+    finishes: "Zieleinläufe", recordFinish: "Zieldurchgang erfassen", finishAfterStart: "Zieleinläufe kannst du ab dem Startsignal erfassen.", modeEarly: "Frühstart", modeFinish: "Ziel", earlyHint: "Antippen = Frühstarter markieren, nochmals = zurück (z.B. korrekt zurückgekehrt).", tapToFinish: "Antippen = Zieldurchgang jetzt", undo: "Rückgängig", elapsed: "Gesegelt", corrected: "Berechnet",
     codeHint: "Code statt Zeit", calc: "Resultate berechnen", calcPublish: "Berechnen & veröffentlichen", points: "Punkte", net: "Netto", totalPts: "Total", rank: "Rang",
     calcDone: "Resultate veröffentlicht.", sequences: { "5,4,1,0": "5-4-1-0 (Standard)", "3,2,1,0": "3-2-1-0 (kurz)", "10,5,4,1,0": "10-5-4-1-0", "6,5,4,1,0": "6-5-4-1-0 (Klassenstarts)" },
     watchLive: "Live-Startuhr", officialView: "Ansicht Wettfahrtleitung",
