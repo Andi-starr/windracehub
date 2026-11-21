@@ -101,6 +101,7 @@ const fr: Dict = {
     startClock: "Chrono de départ", startSequence: "Lancer la procédure", startAt: "Départ à", startIn: "Départ dans", startNow: "Maintenant (minute pleine suivante)",
     postpone: "Retard (Aperçu)", generalRecall: "Rappel général", abandon: "Annuler (N)", finishRace: "Terminer la manche", reset: "Réinitialiser",
     signals: { warning: "Signal d'avertissement", prep: "Signal préparatoire", prepDown: "Préparatoire affalé", start: "Départ", up: "envoyé", down: "affalé" },
+    deviceAhead: "Votre appareil avance de {s} s", deviceBehind: "Votre appareil retarde de {s} s", syncHow: "Mesuré par rapport à l’horloge du serveur (synchronisée NTP) : meilleure de 6 mesures, renouvelée toutes les 60 s. ± = moitié de l’aller-retour de la meilleure mesure.", prepChangeHint: "Modifiable jusqu’au signal préparatoire", orange: "Orange", classFlag: "Pavillon de classe",
     nextSignal: "Prochain signal", sinceStart: "depuis le départ", clockSync: "Horloge synchronisée", clockOffset: "Écart", sound: "Son activé", soundOff: "Son coupé", fullscreen: "Plein écran",
     finishes: "Arrivées", recordFinish: "Enregistrer l'arrivée", tapToFinish: "Toucher = arrivée maintenant", undo: "Annuler", elapsed: "Temps réel", corrected: "Temps compensé",
     codeHint: "Code au lieu du temps", calc: "Calculer les résultats", calcPublish: "Calculer & publier", points: "Points", net: "Net", totalPts: "Total", rank: "Rang",

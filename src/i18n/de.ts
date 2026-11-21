@@ -100,6 +100,7 @@ const de = {
     startClock: "Startuhr", startSequence: "Startverfahren starten", startAt: "Start um", startIn: "Start in", startNow: "Sofort (nächste volle Minute)",
     postpone: "Startverschiebung (AP)", generalRecall: "Allgemeiner Rückruf", abandon: "Abbrechen (N)", finishRace: "Wettfahrt beenden", reset: "Zurücksetzen",
     signals: { warning: "Ankündigungssignal", prep: "Vorbereitungssignal", prepDown: "Vorbereitung nieder", start: "Start", up: "hoch", down: "nieder" },
+    deviceAhead: "Dein Gerät geht {s} s vor", deviceBehind: "Dein Gerät geht {s} s nach", syncHow: "Gemessen gegen die Serveruhr (NTP-synchron): beste von 6 Messungen, alle 60 s neu. ± = halbe Laufzeit der besten Messung.", prepChangeHint: "Änderbar bis zum Vorbereitungssignal", orange: "Orange", classFlag: "Klassenflagge",
     nextSignal: "Nächstes Signal", sinceStart: "seit Start", clockSync: "Uhr synchron", clockOffset: "Abweichung", sound: "Ton an", soundOff: "Ton aus", fullscreen: "Vollbild",
     finishes: "Zieleinläufe", recordFinish: "Zieldurchgang erfassen", tapToFinish: "Antippen = Zieldurchgang jetzt", undo: "Rückgängig", elapsed: "Gesegelt", corrected: "Berechnet",
     codeHint: "Code statt Zeit", calc: "Resultate berechnen", calcPublish: "Berechnen & veröffentlichen", points: "Punkte", net: "Netto", totalPts: "Total", rank: "Rang",

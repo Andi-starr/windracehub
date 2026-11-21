@@ -53,6 +53,19 @@ export async function startSequence(raceId: string, at: string, sequence?: strin
   touch(r);
 }
 
+/** Prep flag may still change during the sequence, until the preparatory signal is made. */
+export async function setPrepFlag(raceId: string, prepFlag: string) {
+  const r = await raceFor(raceId);
+  if (!PREP_FLAGS.includes(prepFlag)) return;
+  if (r.startAt) {
+    const mins = r.sequence.split(",").map(Number).sort((a, b) => b - a);
+    const prepAt = r.startAt.getTime() - mins[mins.length - 3] * 60e3;
+    if (Date.now() >= prepAt) return;
+  }
+  await db.race.update({ where: { id: raceId }, data: { prepFlag } });
+  touch(r);
+}
+
 export async function signal(raceId: string, kind: "AP" | "X1" | "N" | "FINISH" | "RESET") {
   const r = await raceFor(raceId);
   const data =

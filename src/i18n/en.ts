@@ -101,6 +101,7 @@ const en: Dict = {
     startClock: "Start clock", startSequence: "Start sequence", startAt: "Start at", startIn: "Start in", startNow: "Now (next full minute)",
     postpone: "Postpone (AP)", generalRecall: "General recall", abandon: "Abandon (N)", finishRace: "End race", reset: "Reset",
     signals: { warning: "Warning signal", prep: "Preparatory signal", prepDown: "Preparatory down", start: "Start", up: "up", down: "down" },
+    deviceAhead: "Your device is {s} s ahead", deviceBehind: "Your device is {s} s behind", syncHow: "Measured against the server clock (NTP-synced): best of 6 samples, renewed every 60 s. ± = half the round trip of the best sample.", prepChangeHint: "Can be changed until the preparatory signal", orange: "Orange", classFlag: "Class flag",
     nextSignal: "Next signal", sinceStart: "since start", clockSync: "Clock synced", clockOffset: "Offset", sound: "Sound on", soundOff: "Sound off", fullscreen: "Full screen",
     finishes: "Finishes", recordFinish: "Record finish", tapToFinish: "Tap = finishing now", undo: "Undo", elapsed: "Elapsed", corrected: "Corrected",
     codeHint: "Code instead of time", calc: "Calculate results", calcPublish: "Calculate & publish", points: "Points", net: "Net", totalPts: "Total", rank: "Rank",
