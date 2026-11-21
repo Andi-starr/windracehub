@@ -1,5 +1,5 @@
 import type { Metadata } from "next";
-import { Inter } from "next/font/google";
+import localFont from "next/font/local";
 import Link from "next/link";
 import { Suspense } from "react";
 import "./globals.css";
@@ -10,7 +10,18 @@ import { I18nProvider } from "@/i18n/client";
 import { LangSwitch } from "@/components/LangSwitch";
 import { HideOnHome } from "@/components/HideOnHome";
 
-const inter = Inter({ variable: "--font-inter", subsets: ["latin"] });
+const inter = localFont({
+  variable: "--font-inter",
+  display: "swap",
+  src: [
+    { path: "../../node_modules/@fontsource/inter/files/inter-latin-400-normal.woff2", weight: "400" },
+    { path: "../../node_modules/@fontsource/inter/files/inter-latin-500-normal.woff2", weight: "500" },
+    { path: "../../node_modules/@fontsource/inter/files/inter-latin-600-normal.woff2", weight: "600" },
+    { path: "../../node_modules/@fontsource/inter/files/inter-latin-700-normal.woff2", weight: "700" },
+    { path: "../../node_modules/@fontsource/inter/files/inter-latin-800-normal.woff2", weight: "800" },
+    { path: "../../node_modules/@fontsource/inter/files/inter-latin-900-normal.woff2", weight: "900" },
+  ],
+});
 
 export async function generateMetadata(): Promise<Metadata> {
   const { t } = await getT();

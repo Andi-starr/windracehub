@@ -1,6 +1,6 @@
 import Link from "next/link";
 import { Suspense } from "react";
-import { Space_Grotesk } from "next/font/google";
+import localFont from "next/font/local";
 import { db } from "@/lib/db";
 import { currentUser } from "@/lib/auth";
 import { fmtDate } from "@/lib/format";
@@ -9,7 +9,15 @@ import { HomeLang } from "./HomeLang";
 
 export const dynamic = "force-dynamic";
 
-const grotesk = Space_Grotesk({ subsets: ["latin"], weight: ["400", "500", "700"] });
+// self-hosted (no Google fetch at build time)
+const grotesk = localFont({
+  src: [
+    { path: "../../node_modules/@fontsource/space-grotesk/files/space-grotesk-latin-400-normal.woff2", weight: "400" },
+    { path: "../../node_modules/@fontsource/space-grotesk/files/space-grotesk-latin-500-normal.woff2", weight: "500" },
+    { path: "../../node_modules/@fontsource/space-grotesk/files/space-grotesk-latin-700-normal.woff2", weight: "700" },
+  ],
+  display: "swap",
+});
 const DAY = 864e5;
 const OR = "bg-[#ff5f1f]";
 

@@ -14,11 +14,14 @@ const SHORT = {
 const slugify = (s) => s.normalize("NFKD").replace(/[̀-ͯ]/g, "").toLowerCase().replace(/[^a-z0-9]+/g, "-").replace(/^-|-$/g, "").slice(0, 60);
 
 const events = JSON.parse(readFileSync(new URL("./data/switzerland-2026.json", import.meta.url), "utf8"));
+// one query for what's already there, so a re-run with nothing new takes ~1 s instead of ~900 round trips
+const urlOf = (e) => `https://www.manage2sail.com/de-CH/event/${e.ref}`;
+const have = new Set((await db.event.findMany({ where: { sourceUrl: { not: null } }, select: { sourceUrl: true } })).map((r) => r.sourceUrl));
+const todo = events.filter((e) => !have.has(urlOf(e)));
 let created = 0;
-for (const e of events) {
+for (const e of todo) {
   const club = await db.club.upsert({ where: { name: e.club }, create: { name: e.club, shortName: SHORT[e.club] ?? null }, update: {} });
-  const sourceUrl = `https://www.manage2sail.com/de-CH/event/${e.ref}`;
-  if (await db.event.findFirst({ where: { sourceUrl } })) continue;
+  const sourceUrl = urlOf(e);
   const y = e.start.slice(0, 4);
   let slug = e.title.includes(y) ? slugify(e.title) : `${slugify(e.title)}-${y}`;
   for (let i = 2; await db.event.findUnique({ where: { slug } }); i++) slug = `${slugify(e.title)}-${y}-${i}`;
