@@ -16,7 +16,7 @@ function fmtCountdown(ms: number) {
   return `${neg ? "−" : "+"}${String(m).padStart(2, "0")}:${String(s).padStart(2, "0")}.${d}`;
 }
 
-export function RaceClock({ initial, className, official = false, compact = false }: { initial: RaceState; className: string; official?: boolean; compact?: boolean }) {
+export function RaceClock({ initial, className, official = false, compact = false, slim = false }: { initial: RaceState; className: string; official?: boolean; compact?: boolean; slim?: boolean }) {
   const { t, intl } = useT();
   const sync = useServerClock();
   const now = useNow(sync?.offset ?? 0);
@@ -82,6 +82,14 @@ export function RaceClock({ initial, className, official = false, compact = fals
   const prepChangeable = official && race.status === "SEQUENCE" && !!prepSig && now < prepSig.at - 3000;
   const changePrep = (f: string) => { setPrep(f); act(() => setPrepFlag(race.id, f), { prepFlag: f }); };
   const devOff = sync ? -sync.offset / 1000 : 0;
+
+  // finish device: one slim bar with the race time and the flags that are up, the rest of the screen is for boats
+  if (slim) return (
+    <div className="flex items-center justify-between gap-3 border-2 border-ink bg-accent px-4 py-2 text-ink">
+      <span className="font-mono text-3xl font-bold tabular-nums" suppressHydrationWarning>{startAt && live ? fmtCountdown(now - startAt) : t.race.status[race.status as "PLANNED"]}</span>
+      <span className="flex items-center gap-2">{flags.map((f) => <Flag key={f.code} code={f.code} label={f.label} size={32} />)}</span>
+    </div>
+  );
 
   return (
     <div ref={root} className="space-y-4 border-2 border-ink bg-accent p-4 text-ink sm:p-5">

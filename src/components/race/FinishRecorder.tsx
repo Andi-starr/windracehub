@@ -26,7 +26,7 @@ function loadDesk(key: string, finishes: F[]): Desk {
   };
 }
 
-export function FinishRecorder({ raceId, startAt: initialStart, status: initialStatus = "RUNNING", entries, finishes }: { raceId: string; startAt: number | null; status?: string; entries: E[]; finishes: F[] }) {
+export function FinishRecorder({ raceId, startAt: initialStart, status: initialStatus = "RUNNING", entries, finishes, role = "both" }: { raceId: string; startAt: number | null; status?: string; entries: E[]; finishes: F[]; role?: "start" | "finish" | "both" }) {
   const { t, intl } = useT();
   const sync = useServerClock();
   const router = useRouter();
@@ -62,7 +62,10 @@ export function FinishRecorder({ raceId, startAt: initialStart, status: initialS
   const earlyOpen = !!startAt && t0 >= startAt - 60e3;
   const [modePick, setModePick] = useState<"early" | "laps" | "finish" | null>(null);
   const autoMode = !earlyOpen ? "finish" : startAt && t0 < startAt + 3 * 60e3 ? "early" : desk.fin.length ? "finish" : "laps";
-  const mode = !earlyOpen ? "finish" : modePick ?? autoMode;
+  // start device: early starters only; finish device: laps and finish only
+  const allowed = role === "start" ? ["early"] : role === "finish" ? ["laps", "finish"] : ["early", "laps", "finish"];
+  const pickMode = !earlyOpen ? (role === "start" ? "early" : "finish") : modePick ?? autoMode;
+  const mode = allowed.includes(pickMode) ? pickMode : role === "finish" ? (desk.fin.length ? "finish" : "laps") : "early";
   const [earlyCode, setEarlyCode] = useState("OCS");
   const [sending, setSending] = useState<"" | "early" | "fin" | "wait">("");
   const [msg, setMsg] = useState("");
@@ -131,15 +134,16 @@ export function FinishRecorder({ raceId, startAt: initialStart, status: initialS
 
   return (
     <div className="space-y-4">
-      {earlyOpen && (
-        <div className="grid grid-cols-3 border-2 border-ink text-xs font-semibold uppercase sm:text-sm">
-          {modes.map(([m, label]) => (
+      {earlyOpen && allowed.length > 1 && (
+        <div className={`grid ${allowed.length === 2 ? "grid-cols-2" : "grid-cols-3"} border-2 border-ink text-xs font-semibold uppercase sm:text-sm`}>
+          {modes.filter(([m]) => allowed.includes(m)).map(([m, label]) => (
             <button key={m} type="button" aria-pressed={mode === m} onClick={() => setModePick(m)} className={`px-1 py-3 ${mode === m ? "bg-ink text-paper" : "bg-white"}`}>{label}</button>
           ))}
         </div>
       )}
 
-      {mode === "early" && (
+      {mode === "early" && !earlyOpen && <p className="text-sm text-ink/70">{t.race.earlyFrom}</p>}
+      {mode === "early" && earlyOpen && (
         <div className="space-y-3">
           <div className="flex flex-wrap items-center gap-2 text-sm">
             <span className="text-ink/70">{t.race.earlyHint}</span>
@@ -208,7 +212,7 @@ export function FinishRecorder({ raceId, startAt: initialStart, status: initialS
         </ol>
       )}
 
-      {entries.some((e) => !finished.has(e.id)) && (
+      {role !== "start" && entries.some((e) => !finished.has(e.id)) && (
         <details className="text-sm">
           <summary className="cursor-pointer text-ink/60">{t.race.codeHint} (DNS, DNF, …)</summary>
           <ul className="mt-2 space-y-1">

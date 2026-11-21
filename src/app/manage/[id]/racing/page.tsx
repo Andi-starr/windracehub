@@ -5,7 +5,9 @@ import { requireEventRole } from "@/lib/auth";
 import { getT } from "@/i18n";
 import { RaceClock } from "@/components/race/RaceClock";
 import { FinishRecorder } from "@/components/race/FinishRecorder";
-import { addRace, doneRacing } from "@/app/manage/races";
+import { cookies } from "next/headers";
+import { addRace, doneRacing, setDeskRole } from "@/app/manage/races";
+import { AutoRefresh } from "@/components/race/AutoRefresh";
 
 export const dynamic = "force-dynamic";
 export const metadata = { title: "Let's go racing" };
@@ -19,6 +21,8 @@ export default async function RacingPage({ params, searchParams }: { params: Pro
   const { race: pick, race2: pick2 } = await searchParams;
   const { role } = await requireEventRole(id, "HELPER");
   const { t } = await getT();
+  const deskRaw = (await cookies()).get("wrh_desk")?.value;
+  const desk = deskRaw === "start" || deskRaw === "finish" ? deskRaw : null;
   const e = await db.event.findUnique({
     where: { id },
     include: {
@@ -75,11 +79,27 @@ export default async function RacingPage({ params, searchParams }: { params: Pro
         <div className="min-w-0 flex-1 px-4 py-2">
           <p className="text-[11px] font-semibold uppercase tracking-wide text-accent">{t.racing.goRacing}</p>
           <p className="truncate font-semibold uppercase">{e.title}</p>
+          {desk && (
+            <form action={setDeskRole.bind(null, id, "")} className="text-[11px] uppercase tracking-wide text-ink/60">
+              {desk === "start" ? t.racing.deskStart : t.racing.deskFinish} · <button className="underline">{t.racing.deskSwitch}</button>
+            </form>
+          )}
         </div>
         <a href="#done" className="flex items-center bg-ink px-4 text-sm font-semibold uppercase tracking-wide text-paper hover:bg-accent">{t.racing.done} ✓</a>
       </div>
 
       <div className={`mx-auto space-y-4 p-4 ${split ? "max-w-7xl" : "max-w-4xl"}`}>
+        {!desk && (
+          <section className="card space-y-3">
+            <h2 className="h2">{t.racing.deskQ}</h2>
+            <p className="text-sm text-ink/70">{t.racing.deskHint}</p>
+            <div className="grid gap-2 sm:grid-cols-2">
+              <form action={setDeskRole.bind(null, id, "start")}><button className="btn w-full py-5 text-base">⚑ {t.racing.deskStart}</button></form>
+              <form action={setDeskRole.bind(null, id, "finish")}><button className="btn w-full py-5 text-base">🏁 {t.racing.deskFinish}</button></form>
+            </div>
+          </section>
+        )}
+        {desk === "finish" && <AutoRefresh />}
         {todays.length > 0 && (
           <nav className="-mx-4 flex gap-2 overflow-x-auto px-4 pb-1" aria-label={t.racing.today}>
             {todays.map((r) => {
@@ -112,24 +132,25 @@ export default async function RacingPage({ params, searchParams }: { params: Pro
                 return (
                   <div key={r.id} className="min-w-0 space-y-4">
                     <h1 className={`${split ? "text-xl" : "text-2xl"} font-semibold uppercase tracking-tight`}>{r.eventClass?.name ?? e.title} · {t.race.title} {r.number}</h1>
-                    <RaceClock key={r.id} className={r.eventClass?.name ?? e.title} official compact={split}
+                    <RaceClock key={r.id} className={r.eventClass?.name ?? e.title} official={desk !== "finish"} compact={split} slim={desk === "finish"}
                       initial={{ id: r.id, status: r.status, startAt: r.startAt?.getTime() ?? null, sequence: r.sequence, prepFlag: r.prepFlag, note: r.note, updatedAt: r.updatedAt.getTime() }} />
                     <section className="card">
-                      <h2 className="h2">{t.race.finishes}</h2>
+                      <h2 className="h2">{desk === "start" ? t.race.modeEarly : t.race.finishes}</h2>
                       {list.length === 0
                         ? <p className="text-sm text-ink/60">{t.racing.noEntries}</p>
-                        : <FinishRecorder key={r.id} raceId={r.id} startAt={r.startAt?.getTime() ?? null} status={r.status} entries={list}
+                        : <FinishRecorder key={r.id} role={desk ?? "both"} raceId={r.id} startAt={r.startAt?.getTime() ?? null} status={r.status} entries={list}
                             finishes={r.finishes.map((f) => ({ entryId: f.entryId, finishedAt: f.finishedAt?.toISOString() ?? null, position: f.position, code: f.code }))} />}
                     </section>
                   </div>
                 );
               })}
             </div>
-            <section className={over ? "card space-y-3 border-2 border-accent" : "space-y-2"}>
+            {desk !== "finish" && <section className={over ? "card space-y-3 border-2 border-accent" : "space-y-2"}>
               <p className={over ? "text-sm font-semibold" : "text-[11px] font-semibold uppercase tracking-wide text-ink/60"}>{over ? t.racing.raceOver : t.racing.next}</p>
               <NextButtons big={over} />
               {!split && todays.length > 1 && <p className="text-xs text-ink/60">{t.racing.splitHint}</p>}
-            </section>
+            </section>}
+            {desk === "finish" && <p className="text-xs text-ink/60">{t.racing.finishFollows}</p>}
           </>
         )}
 

@@ -184,3 +184,13 @@ async function writeSeries(eventId: string, classId: string | null, by: string) 
   revalidatePath(`/e/${ev.slug}`);
   revalidatePath(`/manage/${eventId}`);
 }
+
+/** Race day: this phone is the start device or the finish device (remembered per device in a cookie). */
+export async function setDeskRole(eventId: string, role: string) {
+  await requireEventRole(eventId, "HELPER");
+  const { cookies } = await import("next/headers");
+  const jar = await cookies();
+  if (role === "start" || role === "finish") jar.set("wrh_desk", role, { path: "/", maxAge: 60 * 60 * 24 * 365, sameSite: "lax" });
+  else jar.delete("wrh_desk");
+  revalidatePath(`/manage/${eventId}/racing`);
+}
