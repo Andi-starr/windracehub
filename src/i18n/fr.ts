@@ -12,6 +12,7 @@ const fr: Dict = {
     loading: "…", error: "Erreur", class: "Série", club: "Club", total: "Général / autre", rows: "lignes", name: "Nom", email: "E-mail",
   },
   start: {
+    meta1: "Régates en Suisse", meta2: "Zurich, Suisse", est: "Depuis 2026", flow: "Avis de course → Inscription → Résultats", flowSub: "Tout au même endroit", intro: "Toutes les régates de Suisse sur une page : où et quand on régate. Avis de course, inscription, chrono de départ et résultats sur la page de chaque régate.", caption: "Lac de Zurich / M15", login: "Connexion", mine: "Mon espace",
     kicker: "Régates en Suisse", title: "Où et quand on régate.", next: "Prochaines régates", all: "Toutes les régates", search: "Chercher une régate",
     statusTitle: "Aperçu", nextRace: "Prochaine régate", thisWeek: "7 prochains jours", thisMonth: "30 prochains jours", season: "Saison", clubs: "Clubs",
     regattas: "régates", today: "aujourd’hui", tomorrow: "demain", inDays: "dans {n} jours", running: "en cours", none: "Aucune régate à venir pour le moment.",

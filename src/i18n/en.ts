@@ -12,6 +12,7 @@ const en: Dict = {
     loading: "…", error: "Error", class: "Class", club: "Club", total: "Overall / other", rows: "rows", name: "Name", email: "Email",
   },
   start: {
+    meta1: "Swiss sailing events", meta2: "Zurich, Switzerland", est: "Est. 2026", flow: "Notice of race → Entry → Results", flowSub: "All in one place", intro: "Every regatta in Switzerland on one page: where and when we race. Notice of race, entry, start clock and results are right on each regatta’s page.", caption: "Lake Zurich / M15", login: "Log in", mine: "My area",
     kicker: "Regattas in Switzerland", title: "Where and when we race.", next: "Next regattas", all: "All regattas", search: "Find a regatta",
     statusTitle: "Overview", nextRace: "Next regatta", thisWeek: "Next 7 days", thisMonth: "Next 30 days", season: "Season", clubs: "Clubs",
     regattas: "regattas", today: "today", tomorrow: "tomorrow", inDays: "in {n} days", running: "on now", none: "No upcoming regattas listed at the moment.",

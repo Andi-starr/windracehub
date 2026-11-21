@@ -8,6 +8,7 @@ import { db } from "@/lib/db";
 import { getT } from "@/i18n";
 import { I18nProvider } from "@/i18n/client";
 import { LangSwitch } from "@/components/LangSwitch";
+import { HideOnHome } from "@/components/HideOnHome";
 
 const inter = Inter({ variable: "--font-inter", subsets: ["latin"] });
 
@@ -23,6 +24,7 @@ export default async function RootLayout({ children }: { children: React.ReactNo
     <html lang={locale}>
       <body className={`${inter.variable} min-h-screen`}>
         <I18nProvider t={t} intl={intl}>
+          <HideOnHome>
           <header className="border-b border-sea-900 bg-sea-900 text-white">
             <div className="mx-auto flex max-w-5xl flex-wrap items-center justify-between gap-2 px-4 py-3">
               <Link href="/" className="flex items-center gap-2 text-lg font-bold tracking-tight">
@@ -47,8 +49,9 @@ export default async function RootLayout({ children }: { children: React.ReactNo
               </nav>
             </div>
           </header>
+          </HideOnHome>
           <main className="mx-auto max-w-5xl px-4 py-6">{children}</main>
-          <footer className="mx-auto max-w-5xl px-4 py-8 text-xs text-slate-500">{t.footer}</footer>
+          <HideOnHome><footer className="mx-auto max-w-5xl px-4 py-8 text-xs text-slate-500">{t.footer}</footer></HideOnHome>
         </I18nProvider>
       </body>
     </html>

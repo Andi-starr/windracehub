@@ -11,6 +11,7 @@ const de = {
     loading: "…", error: "Fehler", class: "Klasse", club: "Club", total: "Gesamt / andere", rows: "Zeilen", name: "Name", email: "E-Mail",
   },
   start: {
+    meta1: "Segelregatten Schweiz", meta2: "Zürich, Schweiz", est: "Seit 2026", flow: "Ausschreibung → Meldung → Resultate", flowSub: "Alles an einem Ort", intro: "Alle Regatten der Schweiz auf einer Seite: wann und wo gesegelt wird. Ausschreibung, Meldung, Startuhr und Resultate findest du direkt bei jeder Regatta.", caption: "Zürichsee / M15", login: "Anmelden", mine: "Mein Bereich",
     kicker: "Regatten in der Schweiz", title: "Wo und wann gesegelt wird.", next: "Nächste Regatten", all: "Alle Regatten", search: "Regatta suchen",
     statusTitle: "Übersicht", nextRace: "Nächste Regatta", thisWeek: "Nächste 7 Tage", thisMonth: "Nächste 30 Tage", season: "Saison", clubs: "Clubs",
     regattas: "Regatten", today: "heute", tomorrow: "morgen", inDays: "in {n} Tagen", running: "läuft", none: "Zurzeit sind keine kommenden Regatten eingetragen.",
