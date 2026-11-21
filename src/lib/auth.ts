@@ -5,6 +5,7 @@ import { randomBytes } from "crypto";
 import bcrypt from "bcryptjs";
 import { db } from "./db";
 import type { Role, UserRole } from "@prisma/client";
+import { applyDevRole, DEV_ROLE_COOKIE } from "./devRole"; // TEMPORARY role switcher
 
 const COOKIE = "wrh_session";
 const DAYS = 30;
@@ -38,7 +39,8 @@ export async function destroySession() {
 }
 
 export async function currentUser() {
-  const id = (await cookies()).get(COOKIE)?.value;
+  const jar = await cookies();
+  const id = jar.get(COOKIE)?.value;
   if (!id) return null;
   const s = await db.session.findUnique({ where: { id }, include: { user: true } });
   if (!s || s.expiresAt < new Date()) return null;
@@ -46,7 +48,7 @@ export async function currentUser() {
   if (Date.now() - s.user.lastActiveAt.getTime() > 864e5) {
     await db.user.update({ where: { id: s.user.id }, data: { lastActiveAt: new Date(), warned7At: null, warned1At: null } });
   }
-  return s.user;
+  return applyDevRole(s.user, jar.get(DEV_ROLE_COOKIE)?.value); // TEMPORARY role switcher (otherwise: return s.user)
 }
 
 export async function requireUser() {

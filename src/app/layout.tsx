@@ -9,6 +9,7 @@ import { getT } from "@/i18n";
 import { I18nProvider } from "@/i18n/client";
 import { LangSwitch } from "@/components/LangSwitch";
 import { PageWidth } from "@/components/PageWidth";
+import { DevRoleBar } from "@/components/DevRoleBar"; // TEMPORARY role switcher
 
 // self-hosted, no Google fetch at build time
 const grotesk = localFont({
@@ -62,6 +63,8 @@ export default async function RootLayout({ children }: { children: React.ReactNo
             <span>{t.footer}</span>
             <Link href="/veranstalten" className="opacity-70 hover:underline hover:opacity-100">{t.nav.host} →</Link>
           </footer>
+          {user?.realRole === "ADMIN" && <Suspense><DevRoleBar role={user.role} /></Suspense>}{/* TEMPORARY role switcher */}
+          {user?.realRole === "ADMIN" && <div className="h-14" />}
         </I18nProvider>
       </body>
     </html>
